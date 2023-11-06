@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.conf import settings
 
 class UserManager(BaseUserManager):
 
@@ -71,7 +72,7 @@ class User(AbstractBaseUser) :
     """
 
     email = models.EmailField('이메일', max_length=255, unique=True)
-    password = models.CharField('비밀번호', max_length=255)
+    password = models.CharField('비밀번호', max_length=500)
     nickname = models.CharField('활동 아이디', max_length=30, unique=True)
     country = models.CharField('국가', choices=COUNTRY_CHOICES, max_length=50)
     profile_img = models.ImageField('프로필 이미지', upload_to='user/%Y/%m/', blank=True, default="user/default_profile.jpg")
@@ -98,4 +99,16 @@ class User(AbstractBaseUser) :
 
     class Meta:
         db_table = 'user'
+        
 
+class Claim(models.Model):
+    """
+    - author : Q&A 작성자입니다.
+        - 로그인 한 사용자를 자동으로 지정합니다.
+    - content : Q&A 내용입니다.
+    """
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="작성자", on_delete=models.CASCADE)
+    content = models.TextField()
+    
+    class Meta:
+        db_table = 'claim'

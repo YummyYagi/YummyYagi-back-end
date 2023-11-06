@@ -4,7 +4,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
-from user.models import User
+from user.models import User, Claim
 
 
 class UserCreationForm(forms.ModelForm):
@@ -85,5 +85,6 @@ class UserAdmin(BaseUserAdmin):
     filter_horizontal = []
 
 
-admin.site.register(User, UserAdmin)    # 관리자 페이지에 사용자(User) 모델을 등록합니다.
-admin.site.unregister(Group)            # 관리자 페이지에서 기본적으로 제공되는 그룹(Group) 모델을 등록 해제합니다.
+admin.site.register(User, UserAdmin)
+admin.site.register(Claim)
+admin.site.unregister(Group)
