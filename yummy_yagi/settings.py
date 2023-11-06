@@ -113,3 +113,7 @@ MEDIA_URL = '/media/'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+DEFAULT_PROFILE_IMG = 'media/user/default_profile.jpg'
+
+AUTH_USER_MODEL = 'user.User'

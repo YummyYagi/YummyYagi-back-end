@@ -9,7 +9,11 @@ __pycache__/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media
+
+# media 폴더 내부의 모든 파일 무시
+media/*
+# media 폴더 내부의 default_profile.png 파일 포함
+!media/user/default_profile.jpg
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
