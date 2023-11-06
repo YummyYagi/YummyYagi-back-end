@@ -74,9 +74,9 @@ class User(AbstractBaseUser) :
     password = models.CharField('비밀번호', max_length=255)
     nickname = models.CharField('활동 아이디', max_length=30, unique=True)
     country = models.CharField('국가', choices=COUNTRY_CHOICES, max_length=50)
-    profile_img = models.ImageField('프로필 이미지', upload_to='user/', blank=True, default="user/default_profile.jpg")
+    profile_img = models.ImageField('프로필 이미지', upload_to='user/%Y/%m/', blank=True, default="user/default_profile.jpg")
     is_admin = models.BooleanField('관리자 여부', default=False)
-    is_active = models.BooleanField('계정 활성화 여부', default=False)
+    is_active = models.BooleanField('계정 활성화 여부', default=True)
 
     objects = UserManager()
 
