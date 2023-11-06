@@ -1,10 +1,19 @@
 from rest_framework.views import APIView
-
+from rest_framework.response import Response
+from rest_framework import status
+from user.serializers import UserSerializer
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
     def post(self, request):
-        pass
+        if request.data['password'] != request.data['password_check']:
+            return Response({'status':'400', 'error':'비밀번호를 확인해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = UserSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
+            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EmailCheckView(APIView):
