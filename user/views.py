@@ -69,6 +69,8 @@ class UserInfoView(APIView):
         user = get_object_or_404(User, id=request.user.id)
         if not request.data['current_password'] or not request.data['new_password'] or not request.data['new_password_check']:
             return Response({'status':'400', 'error':'모든 필수 정보를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif request.data['current_password'] == request.data['new_password']:
+            return Response({'status':'400', 'error':'비밀번호 변경에는 현재 비밀번호와 다른 비밀번호를 사용해야 합니다.'}, status=status.HTTP_400_BAD_REQUEST)
         elif check_password(request.data['current_password'], user.password) == False:
             return Response({'status':'400', 'error':'현재 비밀번호가 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
         elif request.data['new_password'] != request.data['new_password_check']:
