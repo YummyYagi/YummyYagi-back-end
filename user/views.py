@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from user.serializers import UserSerializer, LoginSerializer
+from story.models import Story
+from user.serializers import UserSerializer, LoginSerializer, MypageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 class RegisterView(APIView):
@@ -29,7 +30,9 @@ class LoginView(TokenObtainPairView):
 class MyPageView(APIView):
     """사용자의 마이페이지입니다."""
     def get(self, request):
-        pass
+        user = request.user
+        serializer = MypageSerializer(user)
+        return Response({'status':'200', 'my_data':serializer.data}, status=status.HTTP_200_OK)
 
 
 class UserInfoView(APIView):

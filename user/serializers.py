@@ -1,5 +1,6 @@
 from rest_framework import serializers, exceptions
 from user.models import User
+from story.models import Story
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -46,3 +47,11 @@ class LoginSerializer(TokenObtainPairSerializer):
         token['profile_img'] = user.profile_img.url
 
         return token
+
+
+class MypageSerializer(serializers.ModelSerializer):
+    story_set = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ("email", "nickname", "profile_img", "country", "bookmark_stories", "story_set")
