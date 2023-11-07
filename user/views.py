@@ -7,6 +7,7 @@ from rest_framework.generics import get_object_or_404
 from user.models import User
 from user.permissions import IsAuthenticatedOrIsOwner
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -47,7 +48,17 @@ class UserInfoView(APIView):
     
     def put(self, request):
         """사용자의 정보를 받아 회원 정보를 수정합니다."""
-        pass
+        user = get_object_or_404(User, id=request.user.id)
+        if check_password(request.data['password'], user.password) == True:
+            serializer = UserInfoSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':'200', 'user_info':serializer.data}, status = status.HTTP_200_OK)
+            else:
+                return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'status':'403', 'error':'비밀번호가 일치하지 않습니다.'}, status=status.HTTP_403_FORBIDDEN)
+
     
     def patch(self, request):
         """사용자의 정보를 받아 비밀번호를 수정합니다."""
