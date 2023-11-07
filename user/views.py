@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from user.serializers import UserSerializer
+from user.serializers import UserSerializer, LoginSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -16,25 +17,13 @@ class RegisterView(APIView):
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EmailCheckView(APIView):
-    """이메일 중복 검사를 위한 클래스 뷰입니다."""
-    def post(self, request):
-        pass
-
-
-class NicknameCheckView(APIView):
-    """닉네임 중복 검사를 위한 클래스 뷰입니다."""
-    def post(self, request):
-        pass
-
-
-class LoginView(APIView):
+class LoginView(TokenObtainPairView):
     """
     사용자 정보를 받아 로그인 합니다.
     
     DRF의 JWT 토큰 인증 로그인 방식에 기본 제공되는 클래스 뷰를 상속받아 재정의합니다.
     """
-    pass
+    serializer_class = LoginSerializer
 
 
 class MyPageView(APIView):
