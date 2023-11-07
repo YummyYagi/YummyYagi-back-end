@@ -1,8 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from user.serializers import UserSerializer, LoginSerializer, QnaSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth import authenticate
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -33,6 +34,7 @@ class MyPageView(APIView):
 
 
 class UserInfoView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         """사용자의 회원 정보 수정 페이지입니다."""
         pass
@@ -47,7 +49,17 @@ class UserInfoView(APIView):
     
     def delete(self, request):
         """사용자의 회원 탈퇴 기능입니다."""
-        pass
+        if request.data:
+            password = request.data.get("password", "")
+            auth_user = authenticate(email=request.user.email, password=password)
+            if auth_user:
+                auth_user.delete()
+                return Response({'status': '204', 'error': '회원 탈퇴가 완료되었습니다.'}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'status': '401', 'error': '비밀번호가 불일치합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response({'status': '400', 'error': '비밀번호를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+
 
     
 class QnaView(APIView):
