@@ -61,6 +61,24 @@ class UserInfoSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+class PasswordSerializer(serializers.ModelSerializer):
+    """사용자의 비밀번호 변경을 위한 시리얼라이저입니다."""
+
+    current_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+    new_password_check = serializers.CharField(required=True, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['current_password', 'new_password', 'new_password_check']
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('new_password')
+        instance.set_password(password)
+        user = super().update(instance, validated_data)
+        user.save()
+        return user
+
 class QnaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Claim

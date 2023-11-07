@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, PasswordSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import get_object_or_404
 from user.models import User
@@ -59,11 +59,24 @@ class UserInfoView(APIView):
         else:
             return Response({'status':'403', 'error':'비밀번호가 일치하지 않습니다.'}, status=status.HTTP_403_FORBIDDEN)
 
-    
     def patch(self, request):
         """사용자의 정보를 받아 비밀번호를 수정합니다."""
-        pass
-    
+
+        user = get_object_or_404(User, id=request.user.id)
+        if not request.data['current_password'] or not request.data['new_password'] or not request.data['new_password_check']:
+            return Response({'status':'400', 'error':'모든 필수 정보를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif check_password(request.data['current_password'], user.password) == False:
+            return Response({'status':'400', 'error':'현재 비밀번호가 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif request.data['new_password'] != request.data['new_password_check']:
+            return Response({'status':'400', 'error':'새 비밀번호가 새 비밀번호 확인과 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = PasswordSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':'200', 'success':'비밀번호 수정 완료'}, status = status.HTTP_200_OK)
+            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
     def delete(self, request):
         """사용자의 회원 탈퇴 기능입니다."""
         if request.data:
