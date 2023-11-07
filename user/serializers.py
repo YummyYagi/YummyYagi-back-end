@@ -1,5 +1,5 @@
 from rest_framework import serializers, exceptions
-from user.models import User
+from user.models import User, Claim
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -46,3 +46,9 @@ class LoginSerializer(TokenObtainPairSerializer):
         token['profile_img'] = user.profile_img.url
 
         return token
+    
+
+class QnaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Claim
+        fields = ['content',]
