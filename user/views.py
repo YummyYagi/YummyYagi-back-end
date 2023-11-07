@@ -11,6 +11,7 @@ from django.contrib.auth.hashers import check_password
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
+
     def post(self, request):
         if request.data['password'] != request.data['password_check']:
             return Response({'status':'400', 'error':'비밀번호를 확인해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -33,6 +34,7 @@ class LoginView(TokenObtainPairView):
 
 class MyPageView(APIView):
     """사용자의 마이페이지입니다."""
+
     def get(self, request):
         pass
 
@@ -42,12 +44,14 @@ class UserInfoView(APIView):
     
     def get(self, request):
         """사용자의 회원 정보 수정 페이지입니다."""
+
         user = get_object_or_404(User, id=request.user.id)
         serializer = UserInfoSerializer(user)
         return Response({'status':'200', 'user_info':serializer.data}, status = status.HTTP_200_OK)
     
     def put(self, request):
         """사용자의 정보를 받아 회원 정보를 수정합니다."""
+
         user = get_object_or_404(User, id=request.user.id)
         if check_password(request.data['password'], user.password) == True:
             serializer = UserInfoSerializer(user, data=request.data, partial=True)
@@ -79,6 +83,7 @@ class UserInfoView(APIView):
 
     def delete(self, request):
         """사용자의 회원 탈퇴 기능입니다."""
+
         if request.data:
             password = request.data.get("password", "")
             auth_user = authenticate(email=request.user.email, password=password)
@@ -93,8 +98,9 @@ class UserInfoView(APIView):
 
     
 class QnaView(APIView):
+    """Q&A를 작성합니다."""
+
     def post(self, request):
-        """Q&A를 작성합니다."""
         serializer = QnaSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user)

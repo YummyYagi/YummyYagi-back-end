@@ -3,8 +3,10 @@ from user.models import User, Claim
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
-# 회원가입
+
 class UserSerializer(serializers.ModelSerializer):
+    """회원가입을 위한 시리얼라이저입니다."""
+
     class Meta:
         model = User
         fields = ['email', 'password', 'country', 'nickname', 'profile_img']
@@ -17,9 +19,10 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-# 로그인
+
 class LoginSerializer(TokenObtainPairSerializer):
-    
+    """로그인을 위한 시리얼라이저입니다."""
+
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
 
@@ -48,7 +51,7 @@ class LoginSerializer(TokenObtainPairSerializer):
         return token
 
 class UserInfoSerializer(serializers.ModelSerializer):
-    """회원가입 수정을 위한 시리얼라이저입니다."""
+    """회원정보 수정을 위한 시리얼라이저입니다."""
 
     class Meta:
         model = User
@@ -79,6 +82,8 @@ class PasswordSerializer(serializers.ModelSerializer):
         return user
 
 class QnaSerializer(serializers.ModelSerializer):
+    """Q&A 피드백을 위한 시리얼라이저입니다."""
+
     class Meta:
         model = Claim
         fields = ['content',]
