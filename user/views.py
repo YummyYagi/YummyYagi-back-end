@@ -1,8 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
-from user.serializers import UserSerializer, LoginSerializer, QnaSerializer
+from rest_framework import status
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.generics import get_object_or_404
+from user.models import User
+from user.permissions import IsAuthenticatedOrIsOwner
 from django.contrib.auth import authenticate
 
 class RegisterView(APIView):
@@ -34,10 +37,13 @@ class MyPageView(APIView):
 
 
 class UserInfoView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrIsOwner]
+    
     def get(self, request):
         """사용자의 회원 정보 수정 페이지입니다."""
-        pass
+        user = get_object_or_404(User, id=request.user.id)
+        serializer = UserInfoSerializer(user)
+        return Response({'status':'200', 'user_info':serializer.data}, status = status.HTTP_200_OK)
     
     def put(self, request):
         """사용자의 정보를 받아 회원 정보를 수정합니다."""

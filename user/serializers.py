@@ -46,7 +46,15 @@ class LoginSerializer(TokenObtainPairSerializer):
         token['profile_img'] = user.profile_img.url
 
         return token
-    
+
+class UserInfoSerializer(serializers.ModelSerializer):
+
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'password', 'country', 'nickname', 'profile_img']
+
 
 class QnaSerializer(serializers.ModelSerializer):
     class Meta:
