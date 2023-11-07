@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from user.serializers import UserSerializer, LoginSerializer
+from user.serializers import UserSerializer, LoginSerializer, QnaSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 class RegisterView(APIView):
@@ -51,10 +51,13 @@ class UserInfoView(APIView):
 
     
 class QnaView(APIView):
-    def get(self, request):
-        """Q&A 페이지입니다."""
-        pass
-    
     def post(self, request):
         """Q&A를 작성합니다."""
-        pass
+        serializer = QnaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=request.user)
+            return Response({'status':'201', 'success':'등록되었습니다.'}, status=status.HTTP_201_CREATED)
+        elif 'content' in serializer.errors:
+            return Response({'status':'400', 'error':'내용을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)      
+        else:
+            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
