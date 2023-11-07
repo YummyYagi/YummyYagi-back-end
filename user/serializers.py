@@ -48,13 +48,18 @@ class LoginSerializer(TokenObtainPairSerializer):
         return token
 
 class UserInfoSerializer(serializers.ModelSerializer):
-
-    password = serializers.CharField(write_only=True)
+    
+    email = serializers.ReadOnlyField()
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'country', 'nickname', 'profile_img']
+        fields = ['email', 'country', 'nickname', 'profile_img']
 
+    def update(self, instance, validated_data):
+        
+        user = super().update(instance, validated_data)
+        user.save()
+        return user
 
 class QnaSerializer(serializers.ModelSerializer):
     class Meta:
