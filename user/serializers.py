@@ -48,12 +48,11 @@ class LoginSerializer(TokenObtainPairSerializer):
         return token
 
 class UserInfoSerializer(serializers.ModelSerializer):
-    
-    email = serializers.ReadOnlyField()
+    """회원가입 수정을 위한 시리얼라이저입니다."""
 
     class Meta:
         model = User
-        fields = ['email', 'country', 'nickname', 'profile_img']
+        fields = ['country', 'nickname', 'profile_img']
 
     def update(self, instance, validated_data):
         
