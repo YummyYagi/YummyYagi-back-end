@@ -1,5 +1,5 @@
 from rest_framework import serializers, exceptions
-from user.models import User
+from user.models import User, Claim
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -48,12 +48,15 @@ class LoginSerializer(TokenObtainPairSerializer):
         return token
 
 class UserInfoSerializer(serializers.ModelSerializer):
-    
 
     password = serializers.CharField(write_only=True)
-    
+
     class Meta:
         model = User
         fields = ['email', 'password', 'country', 'nickname', 'profile_img']
-   
 
+
+class QnaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Claim
+        fields = ['content',]
