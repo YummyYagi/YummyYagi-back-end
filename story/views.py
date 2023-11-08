@@ -17,14 +17,17 @@ class StoryView(APIView):
         story_id가 있을 경우 특정 게시물을 Response 합니다.
         """
         if story_id is None:
-            stories = Story.objects.all().order_by('-created_at')
+            stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at')
             serializer = StoryListSerializer(stories, many=True)
             return Response({'status':'200', 'story_list':serializer.data}, status=status.HTTP_200_OK)
         else:
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
-            serializer = StorySerializer(story)
-            return Response({'status':'200', 'detail':serializer.data}, status=status.HTTP_200_OK)
+            if story.hate_count < 5:
+                serializer = StorySerializer(story)
+                return Response({'status':'200', 'detail':serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({'status':'403', 'error':"관리자만 열람 가능한 스토리입니다."}, status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
