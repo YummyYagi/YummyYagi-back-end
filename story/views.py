@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from story.models import Story
 from rest_framework.response import Response
 from story.serializers import StoryListSerializer
-from rest_framework import status
+from rest_framework import status, exceptions
 
 
 class StoryView(APIView):
@@ -24,8 +24,19 @@ class StoryView(APIView):
     
     def delete(self, request, story_id):
         """작성된 게시글(동화)을 삭제하는 기능입니다."""
-        pass
+        try:
+            story = Story.objects.get(id = story_id)
+        except Story.DoesNotExist:
+            raise exceptions.NotFound({'status':'404', 'error':'스토리를 찾을 수 없습니다.'})
 
+        if request.user.is_authenticated:
+            if request.user == story.author:
+                story.delete()
+                return Response({'status':'204', 'success':'동화가 삭제되었습니다.'}, status=status.HTTP_204_NO_CONTENT)
+            else :
+                return Response({'status':'403', 'error':'삭제 권한이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'status':'401', 'error':'로그인 후 이용해주세요'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LikeView(APIView):
     def post(self, request, story_id):
