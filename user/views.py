@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from story.models import Story
+from user.models import User
+from rest_framework import status, permissions
 from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import get_object_or_404
@@ -12,6 +13,10 @@ from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
 import random
 import string
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from .tasks import send_verification_email
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -22,9 +27,28 @@ class RegisterView(APIView):
         else:
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                user=serializer.save()
+                # 이메일 확인 토큰 생성
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                # 이메일에 인증 링크 포함하여 보내기
+                verification_url = f'http://127.0.0.1:8000/user/verify-email/{uid}/{token}/'
+                send_verification_email.delay(user.id, verification_url, user.email)
+                
                 return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyEmailView(APIView):
+    """이메일 인증을 처리합니다."""
+    def get(self, request, uidb64, token):
+        uid = urlsafe_base64_decode(uidb64)
+        user = User.objects.get(id=uid)
+
+        if default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+        return Response(status=status.HTTP_200_OK)
 
 
 class LoginView(TokenObtainPairView):
