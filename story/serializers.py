@@ -14,6 +14,7 @@ class StoryListSerializer(serializers.ModelSerializer):
     author_id = serializers.CharField(source='author')
     author_nickname = serializers.CharField(source='author.nickname')
     story_title = serializers.CharField(source='title')
+    content = serializers.SerializerMethodField(method_name='get_first_content')
 
     def get_first_content(self, obj):
         first_content = obj.contents.first()
@@ -22,9 +23,6 @@ class StoryListSerializer(serializers.ModelSerializer):
                 'story_first_paragraph': first_content.paragraph,
                 'story_image': first_content.image.url,
             }
-        return None
-
-    content = serializers.SerializerMethodField(method_name='get_first_content')
 
     class Meta:
         model = Story
