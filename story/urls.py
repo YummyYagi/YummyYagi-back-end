@@ -3,7 +3,7 @@ from story import views
 
 urlpatterns = [
     path('',views.StoryView.as_view(), name='story_view'),
-    path('<int:story_id>/',views.DetailPageView.as_view(), name='detail_page_view'),
+    path('<int:story_id>/',views.StoryView.as_view(), name='detail_page_view'),
 
     path('<int:story_id>/like/',views.LikeView.as_view(), name='like_view'),
     path('<int:story_id>/hate/',views.HateView.as_view(), name='hate_view'),
