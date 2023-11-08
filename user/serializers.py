@@ -1,10 +1,8 @@
 from rest_framework import serializers, exceptions
-from user.models import User
-from story.models import Story, Content
 from user.models import User, Claim
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from story.serializers import StoryListSerializer
-
+import re
 
 class UserSerializer(serializers.ModelSerializer):
     """회원가입을 위한 시리얼라이저입니다."""
