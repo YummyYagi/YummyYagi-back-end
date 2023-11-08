@@ -1,7 +1,10 @@
 from rest_framework import serializers, exceptions
+from user.models import User
+from story.models import Story, Content
 from user.models import User, Claim
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-import re
+from story.serializers import StoryListSerializer
+
 
 class UserSerializer(serializers.ModelSerializer):
     """회원가입을 위한 시리얼라이저입니다."""
@@ -57,6 +60,16 @@ class LoginSerializer(TokenObtainPairSerializer):
         token['profile_img'] = user.profile_img.url
 
         return token
+
+
+class MypageSerializer(serializers.ModelSerializer):
+    story_set = StoryListSerializer(many=True)
+    bookmark_stories = StoryListSerializer(many=True)
+
+    class Meta:
+        model = User
+        fields = ('email', 'nickname', 'profile_img', 'country', 'bookmark_stories', 'story_set')
+
 
 class UserInfoSerializer(serializers.ModelSerializer):
     """회원정보 수정을 위한 시리얼라이저입니다."""

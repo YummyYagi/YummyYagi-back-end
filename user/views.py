@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, PasswordSerializer
+from story.models import Story
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import get_object_or_404
 from user.models import User
@@ -39,7 +40,9 @@ class MyPageView(APIView):
     """사용자의 마이페이지입니다."""
 
     def get(self, request):
-        pass
+        user = request.user
+        serializer = MypageSerializer(user)
+        return Response({'status':'200', 'my_data':serializer.data}, status=status.HTTP_200_OK)
 
 
 class UserInfoView(APIView):
