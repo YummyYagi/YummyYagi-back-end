@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     
     'user',
     'story',
+    
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -117,3 +119,29 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_PROFILE_IMG = 'media/user/default_profile.jpg'
 
 AUTH_USER_MODEL = 'user.User'
+
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = env('EMAIL_USE_TLS')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# CELERY SETTINGS
+CELERY_BROKER_URL = 'amqp://guest@localhost:5672//'
+
+CELERY_TIMEZONE = 'Asia/Seoul'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_RESULT_EXPIRES = 30
+CELERY_RESULT_EXTENDED = True
+CELERY_CACHE_BACKEND = 'django-cache'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://redis:6379',
+    }
+}
