@@ -3,6 +3,7 @@ from story.models import Story
 from rest_framework.response import Response
 from story.serializers import StoryListSerializer
 from rest_framework import status, exceptions
+from story.permissions import IsAuthenticated
 
 
 class StoryView(APIView):
@@ -38,10 +39,25 @@ class StoryView(APIView):
         else:
             return Response({'status':'401', 'error':'로그인 후 이용해주세요'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
 class LikeView(APIView):
+    
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, story_id):
         """게시글 좋아요 기능입니다."""
-        pass
+        try:
+            story = Story.objects.get(id = story_id)
+        except Story.DoesNotExist:
+            raise exceptions.NotFound({'status':'404', 'error':'스토리를 찾을 수 없습니다.'})
+
+        if request.user in story.like.all():
+            story.like.remove(request.user)
+            return Response({'status':'200', 'error':'좋아요 취소'}, status=status.HTTP_200_OK)
+        else:
+            story.like.add(request.user)
+            return Response({'status':'200', 'error':'좋아요'}, status=status.HTTP_200_OK)
+            
     
     
 class HateView(APIView):
