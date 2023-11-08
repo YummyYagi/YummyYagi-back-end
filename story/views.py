@@ -7,7 +7,6 @@ from story.serializers import StoryListSerializer, CommentSerializer, CommentCre
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
 from rest_framework.generics import get_object_or_404 
-from django.conf import settings
 
 
 class StoryView(APIView):
