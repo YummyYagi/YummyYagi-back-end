@@ -11,12 +11,15 @@ class Story(models.Model):
     - like : 스토리를 좋아요 한 사용자와의 관계입니다.
     - hate : 스토리를 싫어요 한 사용자와의 관계입니다.
     - bookmark : 스토리를 북마크 한 사용자와의 관계입니다.
+    - created_at : 스토리가 작성된 일자 및 시간입니다.
+        - 스토리가 작성된 시간을 자동으로 저장하도록 설정합니다.
     """
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="작성자", on_delete=models.CASCADE)
-    title = models.CharField("스토리 제목", max_length=255)
-    like = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name="좋아요", related_name='like_stories', blank=True)
-    hate = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name="싫어요", related_name='hate_stories', blank=True)
-    bookmark = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name="북마크", related_name='bookmark_stories', blank=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='작성자', on_delete=models.CASCADE)
+    title = models.CharField('스토리 제목', max_length=255)
+    like = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='좋아요', related_name='like_stories', blank=True)
+    hate = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='싫어요', related_name='hate_stories', blank=True)
+    bookmark = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='북마크', related_name='bookmark_stories', blank=True)
+    created_at = models.DateTimeField('생성시각', auto_now_add=True)
 
     def __str__(self):
         return self.title
@@ -39,9 +42,9 @@ class Content(models.Model):
     - image : 해당 문단의 이미지입니다.
     
     """
-    story = models.ForeignKey(Story, verbose_name="스토리", on_delete=models.CASCADE, related_name="contents")
-    paragraph = models.TextField("문단")
-    image = models.ImageField("문단 이미지", upload_to=story_image_upload_path)
+    story = models.ForeignKey(Story, verbose_name='스토리', on_delete=models.CASCADE, related_name="contents")
+    paragraph = models.TextField('문단')
+    image = models.ImageField('문단 이미지', upload_to=story_image_upload_path)
     
     class Meta:
         db_table = 'content'
@@ -56,9 +59,9 @@ class Comment(models.Model):
     - story : 댓글이 작성된 게시글(스토리)입니다.  
     - content : 댓글의 내용입니다.
     """
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="작성자", on_delete=models.CASCADE)
-    story = models.ForeignKey(Story, verbose_name="스토리", on_delete=models.CASCADE)
-    content = models.TextField("댓글 내용")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='작성자', on_delete=models.CASCADE)
+    story = models.ForeignKey(Story, verbose_name='스토리', on_delete=models.CASCADE)
+    content = models.TextField('댓글 내용')
     
     class Meta:
         db_table = 'comment'
