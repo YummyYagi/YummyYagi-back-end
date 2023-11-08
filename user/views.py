@@ -129,13 +129,14 @@ class UserInfoView(APIView):
 
 
 class QnaView(APIView):
+    permission_classes = [IsAuthenticatedOrIsOwner]
+    
     """Q&A를 작성합니다."""
-
     def post(self, request):
         serializer = QnaSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user)
-            return Response({'status':'201', 'success':'등록되었습니다.'}, status=status.HTTP_201_CREATED)
+            return Response({'status':'201', 'success':'건의 작성 완료'}, status=status.HTTP_201_CREATED)
         elif 'content' in serializer.errors:
             return Response({'status':'400', 'error':'내용을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)      
         else:

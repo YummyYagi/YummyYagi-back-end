@@ -4,7 +4,7 @@ from rest_framework.exceptions import PermissionDenied, AuthenticationFailed
 class IsAuthenticatedOrIsOwner(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
-            raise AuthenticationFailed({'status':'401', 'error':'로그인이 필요한 요청입니다.'})
+            raise AuthenticationFailed({'status':'401', 'error':'로그인 후 이용해주세요.'})
         return True
     
     def has_object_permission(self, request, view, obj):
