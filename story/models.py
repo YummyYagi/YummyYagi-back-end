@@ -18,6 +18,7 @@ class Story(models.Model):
     title = models.CharField('스토리 제목', max_length=255)
     like = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='좋아요', related_name='like_stories', blank=True)
     hate = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='싫어요', related_name='hate_stories', blank=True)
+    hate_count = models.PositiveIntegerField('싫어요 개수', default=0)
     bookmark = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='북마크', related_name='bookmark_stories', blank=True)
     created_at = models.DateTimeField('생성시각', auto_now_add=True)
 
