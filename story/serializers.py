@@ -3,10 +3,25 @@ from story.models import Story, Content, Comment
 
 
 class ContentSerializer(serializers.ModelSerializer):
-
+    content_id = serializers.CharField(source='id')
+    story_image = serializers.CharField(source='image')
+    story_id = serializers.CharField(source='story.id')
+    
     class Meta:
         model = Content
-        fields = '__all__'
+        fields = ['story_id', 'content_id', 'paragraph', 'story_image']
+
+
+class StorySerializer(serializers.ModelSerializer):
+    story_id = serializers.CharField(source='id')
+    author_id = serializers.CharField(source='author')
+    author_nickname = serializers.CharField(source='author.nickname')
+    story_title = serializers.CharField(source='title')
+    story_paragraph_list = ContentSerializer(source='contents', many=True)
+
+    class Meta:
+        model = Story
+        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'story_paragraph_list']
 
 
 class StoryListSerializer(serializers.ModelSerializer):
@@ -26,7 +41,7 @@ class StoryListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Story
-        fields = ('story_id', 'author_id', 'author_nickname', 'story_title', 'content')
+        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content']
         
 
 class CommentSerializer(serializers.ModelSerializer):

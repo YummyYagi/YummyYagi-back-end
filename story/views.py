@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from story.models import Story, Comment
 from rest_framework.response import Response
+from story.serializers import StoryListSerializer, StorySerializer
+from rest_framework import status
 from story.serializers import StoryListSerializer, CommentSerializer, CommentCreateSerializer
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
@@ -19,6 +21,9 @@ class StoryView(APIView):
             return Response({'status':'200', 'story_list':serializer.data}, status=status.HTTP_200_OK)
         else:
             """상세 페이지"""
+            story = Story.objects.get(id=story_id)
+            serializer = StorySerializer(story)
+            return Response({'status':'200', 'detail':serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
