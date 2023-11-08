@@ -1,11 +1,9 @@
 from rest_framework import serializers, exceptions
-<<<<<<< HEAD
 from user.models import User
-from story.models import Story
-=======
+from story.models import Story, Content
 from user.models import User, Claim
->>>>>>> a3210adbc4b5cd3e677cd62445b0197749aa9881
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from story.serializers import StoryListSerializer
 
 
 # 회원가입
@@ -52,15 +50,16 @@ class LoginSerializer(TokenObtainPairSerializer):
 
         return token
 
-<<<<<<< HEAD
 
 class MypageSerializer(serializers.ModelSerializer):
-    story_set = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    story_set = StoryListSerializer(many=True)
+    bookmark_stories = StoryListSerializer(many=True)
 
     class Meta:
         model = User
-        fields = ("email", "nickname", "profile_img", "country", "bookmark_stories", "story_set")
-=======
+        fields = ('email', 'nickname', 'profile_img', 'country', 'bookmark_stories', 'story_set')
+
+
 class UserInfoSerializer(serializers.ModelSerializer):
     
     email = serializers.ReadOnlyField()
@@ -79,4 +78,3 @@ class QnaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Claim
         fields = ['content',]
->>>>>>> a3210adbc4b5cd3e677cd62445b0197749aa9881

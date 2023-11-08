@@ -1,12 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-<<<<<<< HEAD
 from story.models import Story
-from user.serializers import UserSerializer, LoginSerializer, MypageSerializer
-=======
-from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer
->>>>>>> a3210adbc4b5cd3e677cd62445b0197749aa9881
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import get_object_or_404
 from user.models import User
