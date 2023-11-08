@@ -8,6 +8,9 @@ from user.models import User
 from user.permissions import IsAuthenticatedOrIsOwner
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+from django.core.mail import send_mail
+import random
+import string
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -98,7 +101,6 @@ class UserInfoView(APIView):
             return Response({'status': '400', 'error': '비밀번호를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-    
 class QnaView(APIView):
     """Q&A를 작성합니다."""
 
@@ -111,3 +113,27 @@ class QnaView(APIView):
             return Response({'status':'400', 'error':'내용을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)      
         else:
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetView(APIView):
+    """비밀번호 찾기 기능입니다."""
+    def post(self, request):
+        
+        try:
+            user = User.objects.get(email = request.data['email'])
+        except User.DoesNotExist:
+            return Response({'status':'400', 'error':'입력하신 이메일을 찾을 수 없습니다.'})
+        
+        # 랜덤 비밀번호 생성
+        temp_password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))
+        
+        user.set_password(temp_password)
+        user.save()
+        
+        subject = '임시 비밀번호 발급'
+        message = f'임시 비밀번호: {temp_password}'
+        from_email = 'yammyyagi@gmail.com'
+        recipient_list = [request.data['email']]
+        send_mail(subject, message, from_email, recipient_list)
+        
+        return Response({'status': '200', 'success': '임시 비밀번호가 이메일로 전송되었습니다.'}, status=status.HTTP_200_OK)
