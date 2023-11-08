@@ -39,7 +39,7 @@ class Content(models.Model):
     - image : 해당 문단의 이미지입니다.
     
     """
-    story = models.ForeignKey(Story, verbose_name="작성자", on_delete=models.CASCADE, related_name="contents")
+    story = models.ForeignKey(Story, verbose_name="스토리", on_delete=models.CASCADE, related_name="contents")
     paragraph = models.TextField("문단")
     image = models.ImageField("문단 이미지", upload_to=story_image_upload_path)
     
