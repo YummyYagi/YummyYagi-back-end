@@ -12,7 +12,7 @@ class StoryView(APIView):
         story_id가 있을 경우 특정 게시물을 Response 합니다.
         """
         if story_id is None:
-            stories = Story.objects.all().order_by('-create_at')
+            stories = Story.objects.all().order_by('-created_at')
             serializer = StoryListSerializer(stories, many=True)
             return Response({'status':'200', 'story_list':serializer.data}, status=status.HTTP_200_OK)
         else:
