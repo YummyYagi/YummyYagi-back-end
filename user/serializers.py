@@ -6,12 +6,22 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from story.serializers import StoryListSerializer
 
 
-# 회원가입
 class UserSerializer(serializers.ModelSerializer):
+    """회원가입을 위한 시리얼라이저입니다."""
+    
+    password = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = User
         fields = ['email', 'password', 'country', 'nickname', 'profile_img']
 
+    def validate(self, data):
+        password = data.get('password')
+        pattern = r'^(?=.*?[0-9])(?=.*?[#?!@$~%^&*-]).{8,20}$'
+        if not re.match(pattern, password):
+            raise exceptions.ValidationError({'password':'비밀번호는 8자 이상 20자 이하 및 숫자와 특수 문자(#?!@$~%^&*-)를 하나씩 포함시켜야 합니다.'})
+        return data
+    
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = User(**validated_data)
@@ -20,9 +30,10 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-# 로그인
+
 class LoginSerializer(TokenObtainPairSerializer):
-    
+    """로그인을 위한 시리얼라이저입니다."""
+
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
 
@@ -61,12 +72,11 @@ class MypageSerializer(serializers.ModelSerializer):
 
 
 class UserInfoSerializer(serializers.ModelSerializer):
-    
-    email = serializers.ReadOnlyField()
+    """회원정보 수정을 위한 시리얼라이저입니다."""
 
     class Meta:
         model = User
-        fields = ['email', 'country', 'nickname', 'profile_img']
+        fields = ['country', 'nickname', 'profile_img']
 
     def update(self, instance, validated_data):
         
@@ -74,7 +84,34 @@ class UserInfoSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+class PasswordSerializer(serializers.ModelSerializer):
+    """사용자의 비밀번호 변경을 위한 시리얼라이저입니다."""
+
+    current_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+    new_password_check = serializers.CharField(required=True, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['current_password', 'new_password', 'new_password_check']
+
+    def validate(self, data):
+        password = data.get('new_password')
+        pattern = r'^(?=.*?[0-9])(?=.*?[#?!@$~%^&*-]).{8,20}$'
+        if not re.match(pattern, password):
+            raise exceptions.ValidationError({'password':'비밀번호는 8자 이상 20자 이하 및 숫자와 특수 문자(#?!@$~%^&*-)를 하나씩 포함시켜야 합니다.'})
+        return data
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('new_password')
+        instance.set_password(password)
+        user = super().update(instance, validated_data)
+        user.save()
+        return user
+
 class QnaSerializer(serializers.ModelSerializer):
+    """Q&A 피드백을 위한 시리얼라이저입니다."""
+
     class Meta:
         model = Claim
         fields = ['content',]

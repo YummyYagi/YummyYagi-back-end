@@ -10,4 +10,5 @@ urlpatterns = [
     path('pwd-update/', views.UserInfoView.as_view(), name='user_pwd_update_view'),
     path('delete/', views.UserInfoView.as_view(), name='user_info_delete_view'),
     path('qna/', views.QnaView.as_view(), name='qna_view'),
+    path('pwd-reset/', views.PasswordResetView.as_view(), name='password_reset_view'),
 ]

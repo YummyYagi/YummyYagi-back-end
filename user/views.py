@@ -2,16 +2,20 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from story.models import Story
-from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import get_object_or_404
 from user.models import User
 from user.permissions import IsAuthenticatedOrIsOwner
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+from django.core.mail import send_mail
+import random
+import string
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
+
     def post(self, request):
         if request.data['password'] != request.data['password_check']:
             return Response({'status':'400', 'error':'비밀번호를 확인해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -34,6 +38,7 @@ class LoginView(TokenObtainPairView):
 
 class MyPageView(APIView):
     """사용자의 마이페이지입니다."""
+
     def get(self, request):
         user = request.user
         serializer = MypageSerializer(user)
@@ -45,12 +50,14 @@ class UserInfoView(APIView):
     
     def get(self, request):
         """사용자의 회원 정보 수정 페이지입니다."""
+
         user = get_object_or_404(User, id=request.user.id)
         serializer = UserInfoSerializer(user)
         return Response({'status':'200', 'user_info':serializer.data}, status = status.HTTP_200_OK)
     
     def put(self, request):
         """사용자의 정보를 받아 회원 정보를 수정합니다."""
+
         user = get_object_or_404(User, id=request.user.id)
         if check_password(request.data['password'], user.password) == True:
             serializer = UserInfoSerializer(user, data=request.data, partial=True)
@@ -62,13 +69,29 @@ class UserInfoView(APIView):
         else:
             return Response({'status':'403', 'error':'비밀번호가 일치하지 않습니다.'}, status=status.HTTP_403_FORBIDDEN)
 
-    
     def patch(self, request):
         """사용자의 정보를 받아 비밀번호를 수정합니다."""
-        pass
-    
+
+        user = get_object_or_404(User, id=request.user.id)
+        if not request.data['current_password'] or not request.data['new_password'] or not request.data['new_password_check']:
+            return Response({'status':'400', 'error':'모든 필수 정보를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif check_password(request.data['current_password'], user.password) == False:
+            return Response({'status':'400', 'error':'현재 비밀번호가 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif request.data['current_password'] == request.data['new_password']:
+            return Response({'status':'400', 'error':'비밀번호 변경에는 현재 비밀번호와 다른 비밀번호를 사용해야 합니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif request.data['new_password'] != request.data['new_password_check']:
+            return Response({'status':'400', 'error':'새 비밀번호가 새 비밀번호 확인과 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = PasswordSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':'200', 'success':'비밀번호 수정 완료'}, status = status.HTTP_200_OK)
+            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
     def delete(self, request):
         """사용자의 회원 탈퇴 기능입니다."""
+
         if request.data:
             password = request.data.get("password", "")
             auth_user = authenticate(email=request.user.email, password=password)
@@ -81,10 +104,10 @@ class UserInfoView(APIView):
             return Response({'status': '400', 'error': '비밀번호를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-    
 class QnaView(APIView):
+    """Q&A를 작성합니다."""
+
     def post(self, request):
-        """Q&A를 작성합니다."""
         serializer = QnaSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user)
@@ -93,3 +116,27 @@ class QnaView(APIView):
             return Response({'status':'400', 'error':'내용을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)      
         else:
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetView(APIView):
+    """비밀번호 찾기 기능입니다."""
+    def post(self, request):
+        
+        try:
+            user = User.objects.get(email = request.data['email'])
+        except User.DoesNotExist:
+            return Response({'status':'400', 'error':'입력하신 이메일을 찾을 수 없습니다.'})
+        
+        # 랜덤 비밀번호 생성
+        temp_password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))
+        
+        user.set_password(temp_password)
+        user.save()
+        
+        subject = '임시 비밀번호 발급'
+        message = f'임시 비밀번호: {temp_password}'
+        from_email = 'yammyyagi@gmail.com'
+        recipient_list = [request.data['email']]
+        send_mail(subject, message, from_email, recipient_list)
+        
+        return Response({'status': '200', 'success': '임시 비밀번호가 이메일로 전송되었습니다.'}, status=status.HTTP_200_OK)
