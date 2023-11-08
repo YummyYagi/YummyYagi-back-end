@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from story.serializers import StoryListSerializer
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
-
+from django.conf import settings
 
 class StoryView(APIView):
     def get(self, request, story_id = None):
@@ -59,11 +59,29 @@ class LikeView(APIView):
             return Response({'status':'200', 'success':'좋아요'}, status=status.HTTP_200_OK)
             
     
-    
 class HateView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, story_id):
         """게시글 싫어요 기능입니다."""
-        pass
+        try:
+            story = Story.objects.get(id = story_id)
+        except Story.DoesNotExist:
+            raise exceptions.NotFound({'status':'404', 'error':'스토리를 찾을 수 없습니다.'})
+
+        if request.user in story.hate.all():
+            story.hate.remove(request.user)
+            story.hate_count -= 1
+            story.save()
+
+            return Response({'status':'200', 'success':'싫어요 취소'}, status=status.HTTP_200_OK)
+        else:
+            story.hate.add(request.user)
+            story.hate_count += 1
+            story.save()
+            return Response({'status':'200', 'success':'싫어요'}, status=status.HTTP_200_OK)
+
     
     
 class BookmarkView(APIView):
