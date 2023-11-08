@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from story.models import Story
 from rest_framework.response import Response
-from story.serializers import StoryListSerializer, CommentSerializer
+from story.serializers import StoryListSerializer, CommentSerializer, CommentCreateSerializer
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
 
@@ -82,7 +82,12 @@ class CommentView(APIView):
     
     def post(self, request, story_id):
         """댓글을 작성합니다."""
-        pass
+        serializer = CommentCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=request.user, story_id=story_id)
+            return Response({'status':'201', 'success':'댓글 작성완료'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, story_id, comment_id):
         """댓글을 삭제합니다."""

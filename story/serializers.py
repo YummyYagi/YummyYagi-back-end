@@ -41,3 +41,9 @@ class CommentSerializer(serializers.ModelSerializer):
         
     def get_nickname(self, obj):
         return obj.author.nickname
+    
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['content']
