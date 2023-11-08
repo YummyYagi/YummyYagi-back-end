@@ -1,11 +1,12 @@
 from rest_framework.views import APIView
-from story.models import Story
+from story.models import Story, Comment
 from rest_framework.response import Response
 from story.serializers import StoryListSerializer, StorySerializer
 from rest_framework import status
 from story.serializers import StoryListSerializer, CommentSerializer, CommentCreateSerializer
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
+from rest_framework.generics import get_object_or_404 
 
 
 class StoryView(APIView):
@@ -87,13 +88,24 @@ class CommentView(APIView):
     
     def post(self, request, story_id):
         """댓글을 작성합니다."""
-        serializer = CommentCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(author=request.user, story_id=story_id)
-            return Response({'status':'201', 'success':'댓글 작성완료'}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        if request.user.is_authenticated:
+            serializer = CommentCreateSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(author=request.user, story_id=story_id)
+                return Response({'status':'201', 'success':'댓글 작성 완료'}, status=status.HTTP_201_CREATED)
+            elif 'content' in serializer.errors:
+                return Response({'status':'400', 'error':'댓글 내용을 입력해주세요'}, status=status.HTTP_400_BAD_REQUEST)
+        else :
+            return Response({'status':'401', 'error':'로그인 후 이용가능합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     def delete(self, request, story_id, comment_id):
         """댓글을 삭제합니다."""
-        pass
+        if request.user.is_authenticated:
+            comment = get_object_or_404(Comment, id=comment_id)
+            if request.user == comment.author:
+                comment.delete()
+                return Response({'status':'204', 'success':'댓글 삭제 완료'}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'status':'403', 'error':'권한이 없습니다'}, status=status.HTTP_403_FORBIDDEN)
+        else :
+            return Response({'status':'401', 'error':'로그인 후 이용가능합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
