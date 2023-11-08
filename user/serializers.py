@@ -1,16 +1,24 @@
 from rest_framework import serializers, exceptions
 from user.models import User, Claim
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
-
+import re
 
 class UserSerializer(serializers.ModelSerializer):
     """회원가입을 위한 시리얼라이저입니다."""
+    
+    password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
         fields = ['email', 'password', 'country', 'nickname', 'profile_img']
 
+    def validate(self, data):
+        password = data.get('password')
+        pattern = r'^(?=.*?[0-9])(?=.*?[#?!@$~%^&*-]).{8,20}$'
+        if not re.match(pattern, password):
+            raise exceptions.ValidationError({'password':'비밀번호는 8자 이상 20자 이하 및 숫자와 특수 문자(#?!@$~%^&*-)를 하나씩 포함시켜야 합니다.'})
+        return data
+    
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = User(**validated_data)
@@ -73,6 +81,13 @@ class PasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['current_password', 'new_password', 'new_password_check']
+
+    def validate(self, data):
+        password = data.get('new_password')
+        pattern = r'^(?=.*?[0-9])(?=.*?[#?!@$~%^&*-]).{8,20}$'
+        if not re.match(pattern, password):
+            raise exceptions.ValidationError({'password':'비밀번호는 8자 이상 20자 이하 및 숫자와 특수 문자(#?!@$~%^&*-)를 하나씩 포함시켜야 합니다.'})
+        return data
 
     def update(self, instance, validated_data):
         password = validated_data.pop('new_password')
