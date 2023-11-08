@@ -94,9 +94,22 @@ class HateView(APIView):
     
     
 class BookmarkView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, story_id):
         """관심있는 게시글(동화)을 북마크합니다."""
-        pass
+        try:
+            story = Story.objects.get(id = story_id)
+        except Story.DoesNotExist:
+            raise exceptions.NotFound({'status':'404', 'error':'스토리를 찾을 수 없습니다.'})
+
+        if request.user in story.bookmark.all():
+            story.bookmark.remove(request.user)
+            return Response({'status':'200', 'success':'북마크 취소'}, status=status.HTTP_200_OK)
+        else:
+            story.bookmark.add(request.user)
+            return Response({'status':'200', 'success':'북마크'}, status=status.HTTP_200_OK)
 
 
 class CommentView(APIView):
