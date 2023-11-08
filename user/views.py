@@ -129,8 +129,9 @@ class UserInfoView(APIView):
 
 
 class QnaView(APIView):
+    permission_classes = [IsAuthenticatedOrIsOwner]
+    
     """Q&A를 작성합니다."""
-
     def post(self, request):
         serializer = QnaSerializer(data=request.data)
         if serializer.is_valid():
