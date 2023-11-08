@@ -1,10 +1,16 @@
 from rest_framework.views import APIView
+from story.models import Story
+from rest_framework.response import Response
+from story.serializers import StoryListSerializer
+from rest_framework import status
 
 
 class MainPageView(APIView):
     def get(self, request):
         """메인페이지입니다."""
-        pass
+        stories = Story.objects.all()
+        serializer = StoryListSerializer(stories, many=True)
+        return Response({'status':'200', 'story_list':serializer.data}, status=status.HTTP_200_OK)
   
     
 class DetailPageView(APIView):
