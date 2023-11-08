@@ -53,10 +53,10 @@ class LikeView(APIView):
 
         if request.user in story.like.all():
             story.like.remove(request.user)
-            return Response({'status':'200', 'error':'좋아요 취소'}, status=status.HTTP_200_OK)
+            return Response({'status':'200', 'success':'좋아요 취소'}, status=status.HTTP_200_OK)
         else:
             story.like.add(request.user)
-            return Response({'status':'200', 'error':'좋아요'}, status=status.HTTP_200_OK)
+            return Response({'status':'200', 'success':'좋아요'}, status=status.HTTP_200_OK)
             
     
     
