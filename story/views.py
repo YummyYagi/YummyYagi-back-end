@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from story.models import Story
 from rest_framework.response import Response
-from story.serializers import StoryListSerializer
+from story.serializers import StoryListSerializer, CommentSerializer
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
 
@@ -75,7 +75,10 @@ class BookmarkView(APIView):
 class CommentView(APIView):
     def get(self, request, story_id):
         """댓글을 조회합니다."""
-        pass
+        story = Story.objects.get(id=story_id)
+        comments = story.comment_set.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response({'status':'200', 'comments':serializer.data}, status=status.HTTP_200_OK)
     
     def post(self, request, story_id):
         """댓글을 작성합니다."""
