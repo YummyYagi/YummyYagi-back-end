@@ -63,12 +63,12 @@ class LoginSerializer(TokenObtainPairSerializer):
 
 
 class MypageSerializer(serializers.ModelSerializer):
-    story_set = StoryListSerializer(many=True)
-    bookmark_stories = StoryListSerializer(many=True)
+    my_story_list = StoryListSerializer(source='story_set', many=True)
+    bookmark_story_list = StoryListSerializer(source='bookmark_stories', many=True)
 
     class Meta:
         model = User
-        fields = ('email', 'nickname', 'profile_img', 'country', 'bookmark_stories', 'story_set')
+        fields = ['email', 'nickname', 'profile_img', 'country', 'bookmark_story_list', 'my_story_list']
 
 
 class UserInfoSerializer(serializers.ModelSerializer):
