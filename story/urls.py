@@ -13,4 +13,5 @@ urlpatterns = [
     path('<int:story_id>/comment/<int:comment_id>/',views.CommentView.as_view(), name='comment_delete_view'),
 
     path('fairytail_gpt/', views.RequestFairytail.as_view(), name='request_fairytail_view'),
+    path('image_dall-e/', views.RequestImage.as_view(), name='request_image_view'),
 ]
