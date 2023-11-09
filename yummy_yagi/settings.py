@@ -14,7 +14,7 @@ environ.Env.read_env(
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
-GPT_API_KEY = env('GPT_API_KEY')
+GPT_API_KEY = env('GPT_DALLE_API_KEY')
 DEEPL_AUTH_KEY = env('DEEPL_AUTH_KEY')
 PRES_API_KEY = env('PRES_API_KEY')
 
