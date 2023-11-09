@@ -103,6 +103,31 @@ class RequestFairytail(APIView):
         return Response({'status':'200', 'success':'', '원본':gpt_response, '번역본':gpt_trans_result}, status=status.HTTP_200_OK)
 
 
+class RequestImage(APIView):
+    def post(self, request):
+        
+        # OpenAI API에 연결하기 위한 클라이언트 객체를 생성
+        client = OpenAI(api_key = settings.GPT_API_KEY)
+        
+        # 문단 나누는 로직
+        paragragh_list = request.data["script"].split('/n/n')
+
+        image_url_list = []
+
+        for paragragh in paragragh_list:
+            response = client.images.generate(
+            model='dall-e-3',
+            prompt=paragragh,
+            size='1024x1024',
+            quality='standard',
+            n=1,
+            )
+            
+            image_url = response.data[0].url
+            image_url_list.append(image_url)
+        
+        return Response({'status':'201', 'paragraph_list':paragragh_list, 'image_url_list':image_url_list}, status=status.HTTP_201_CREATED)
+
 class StoryView(APIView):
     def get(self, request, story_id = None):
         """
