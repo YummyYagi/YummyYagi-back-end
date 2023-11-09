@@ -1,6 +1,17 @@
 from rest_framework import serializers
 from story.models import Story, Content, Comment
 
+class StoryCreateSerializer(serializers.ModelSerializer):
+   
+    class Meta:
+        model = Story
+        fields = ['title',]
+
+class ContentCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Content
+        fields = ['paragraph', 'image']
 
 class ContentSerializer(serializers.ModelSerializer):
     content_id = serializers.CharField(source='id')
@@ -42,7 +53,7 @@ class StoryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Story
         fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content']
-        
+
 
 class CommentSerializer(serializers.ModelSerializer):
     comment_id = serializers.CharField(source='id')

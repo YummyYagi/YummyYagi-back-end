@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from story.models import Story, Comment
 from rest_framework.response import Response
-from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer
+from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer, StoryCreateSerializer, ContentCreateSerializer
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
 from rest_framework.generics import get_object_or_404 
@@ -10,6 +10,8 @@ from django.conf import settings
 import deepl
 from openai import OpenAI
 from googleapiclient import discovery
+import requests
+from django.core.files.base import ContentFile
 
 class RequestFairytail(APIView):
     def post(self, request):
@@ -128,6 +130,7 @@ class RequestImage(APIView):
         
         return Response({'status':'201', 'paragraph_list':paragragh_list, 'image_url_list':image_url_list}, status=status.HTTP_201_CREATED)
 
+
 class StoryView(APIView):
     def get(self, request, story_id = None):
         """
@@ -149,8 +152,36 @@ class StoryView(APIView):
 
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
-        pass
-    
+        serializer = StoryCreateSerializer(data=request.data)
+
+
+        if serializer.is_valid():
+            story = serializer.save(author = request.user)
+
+            paragraph_list = request.data['paragraph_list']
+            image_url_list = request.data['image_url_list']
+
+            image_file_list = []
+           
+            for image_url in image_url_list:
+                response = requests.get(image_url)
+                if response.status_code == 200:
+                    image_content = ContentFile(response.content)
+                   
+                    image_content.name = 'story_image.jpg'
+                    image_file_list.append(image_content)
+
+            for i in range(len(paragraph_list)):
+                content_data = {'paragraph':paragraph_list[i], 'image':image_file_list[i]}
+                content_serializer = ContentCreateSerializer(data=content_data)
+                if content_serializer.is_valid():
+                    content_serializer.save(story=story)
+                else:
+                    return Response({'status':'400', 'error':'동화 페이지 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status':'201', 'success':'동화가 작성되었습니다.'}, status=status.HTTP_201_CREATED)
+        return Response({'status':'400', 'error':'동화 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
     def delete(self, request, story_id):
         """작성된 게시글(동화)을 삭제하는 기능입니다."""
         try:
@@ -210,7 +241,6 @@ class HateView(APIView):
             story.save()
             return Response({'status':'200', 'success':'싫어요'}, status=status.HTTP_200_OK)
 
-    
     
 class BookmarkView(APIView):
 
