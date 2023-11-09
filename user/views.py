@@ -1,13 +1,11 @@
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from story.models import Story
-from user.models import User
-from rest_framework import status, permissions
-from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import get_object_or_404
 from user.models import User
 from user.permissions import IsAuthenticatedOrIsOwner
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
