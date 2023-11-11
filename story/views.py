@@ -98,11 +98,12 @@ class RequestFairytail(APIView):
         
         gpt_trans_result = translator.translate_text(
             gpt_response, target_lang=request.data['target_language'])
+        gpt_trans_result=str(gpt_trans_result)
         print(f'번역 ChatGPT : {gpt_trans_result}')
         
         input_gpt_messages.append({'role': 'assistant', 'content': gpt_response})
         
-        return Response({'status':'200', 'success':'', '원본':gpt_response, '번역본':gpt_trans_result}, status=status.HTTP_200_OK)
+        return Response({'status':'200', 'success':'', 'original':gpt_response, 'translation':gpt_trans_result}, status=status.HTTP_200_OK)
 
 
 class RequestImage(APIView):
