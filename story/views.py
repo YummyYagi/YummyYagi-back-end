@@ -98,6 +98,8 @@ class RequestFairytail(APIView):
         
         gpt_trans_result = translator.translate_text(
             gpt_response, target_lang=request.data['target_language'])
+        
+        # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
         gpt_trans_result=str(gpt_trans_result)
         print(f'번역 ChatGPT : {gpt_trans_result}')
         
