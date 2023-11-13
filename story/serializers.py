@@ -39,6 +39,7 @@ class StoryListSerializer(serializers.ModelSerializer):
     story_id = serializers.CharField(source='id')
     author_id = serializers.CharField(source='author')
     author_nickname = serializers.CharField(source='author.nickname')
+    author_country = serializers.CharField(source='author.country')
     story_title = serializers.CharField(source='title')
     content = serializers.SerializerMethodField(method_name='get_first_content')
 
@@ -52,7 +53,7 @@ class StoryListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Story
-        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content']
+        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content', 'author_country']
 
 
 class CommentSerializer(serializers.ModelSerializer):
