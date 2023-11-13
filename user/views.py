@@ -114,16 +114,16 @@ class UserInfoView(APIView):
     def delete(self, request):
         """사용자의 회원 탈퇴 기능입니다."""
 
-        if request.data:
-            password = request.data.get("password", "")
-            auth_user = authenticate(email=request.user.email, password=password)
-            if auth_user:
-                auth_user.delete()
-                return Response({'status': '204', 'error': '회원 탈퇴가 완료되었습니다.'}, status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response({'status': '401', 'error': '비밀번호가 불일치합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-        else:
+        password = request.data.get("password", "")
+        if not password:
             return Response({'status': '400', 'error': '비밀번호를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        auth_user = authenticate(email=request.user.email, password=password)
+        if auth_user:
+            auth_user.delete()
+            return Response({'status': '204', 'success': '회원 탈퇴가 완료되었습니다.'}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'status': '401', 'error': '비밀번호가 불일치합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class QnaView(APIView):
