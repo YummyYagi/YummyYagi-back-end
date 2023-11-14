@@ -11,7 +11,8 @@ db.sqlite3
 db.sqlite3-journal
 
 # media 폴더 내부의 모든 파일 무시
-media/*
+media/story/*
+media/user/*
 # media 폴더 내부의 default_profile.png 파일 포함
 !media/user/default_profile.jpg
 
