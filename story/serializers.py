@@ -2,7 +2,7 @@ from rest_framework import serializers
 from story.models import Story, Content, Comment
 
 class StoryCreateSerializer(serializers.ModelSerializer):
-   
+
     class Meta:
         model = Story
         fields = ['title',]
