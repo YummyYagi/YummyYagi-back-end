@@ -1,3 +1,4 @@
+
 from rest_framework.views import APIView
 from story.models import Story, Comment
 from rest_framework.response import Response
@@ -13,7 +14,58 @@ from googleapiclient import discovery
 import requests
 from django.core.files.base import ContentFile
 
+import random
+import time
+
+import openai
+
+def retry_with_exponential_backoff(
+    func,
+    initial_delay: float = 1,
+    exponential_base: float = 2,
+    jitter: bool = True,
+    max_retries: int = 10,
+    errors: tuple = (openai.RateLimitError,openai.BadRequestError,),
+):
+    """Retry a function with exponential backoff."""
+
+    def wrapper(*args, **kwargs):
+        # Initialize variables
+        num_retries = 0
+        delay = initial_delay
+
+        # Loop until a successful response or max_retries is hit or an exception is raised
+        while True:
+            try:
+                return func(*args, **kwargs)
+
+            # Retry on specified errors
+            except errors as e:
+                print(e)
+                # Increment retries
+                num_retries += 1
+
+                # Check if max retries has been reached
+                if num_retries > max_retries:
+                    raise Exception(
+                        f"Maximum number of retries ({max_retries}) exceeded."
+                    )
+
+                # Increment the delay
+                delay *= exponential_base * (1 + jitter * random.random())
+
+                # Sleep for the delay
+                time.sleep(delay)
+
+            # Raise exceptions for any errors not specified
+            except Exception as e:
+                print(e)
+                raise e
+
+    return wrapper
+
 class RequestFairytail(APIView):
+    @retry_with_exponential_backoff
     def post(self, request):
         
         # OpenAI(ChatGPT & DALL-E) API에 연결하기 위한 클라이언트 객체를 생성
@@ -72,12 +124,14 @@ class RequestFairytail(APIView):
             {'role': 'system', 'content': 'You are a helpful assistant. You must not use violent language.'})
         input_gpt_messages.append({'role': 'user', 'content': input_query}) 
         
+        @retry_with_exponential_backoff
+        def completions_with_backoff(**kwargs):
+            return client.chat.completions.create(**kwargs)
         # GPT 실행
-        completion = client.chat.completions.create(
+        completion = completions_with_backoff(
             model=model,
             messages=input_gpt_messages,
             temperature=1.3,
-            max_tokens=500
         )
         gpt_response = completion.choices[0].message.content
         print(f'ChatGPT : {gpt_response}')
@@ -108,30 +162,65 @@ class RequestFairytail(APIView):
         return Response({'status':'200', 'success':'', 'original':gpt_response, 'translation':gpt_trans_result}, status=status.HTTP_200_OK)
 
 
+# class RequestImage(APIView):
+#     def post(self, request):
+        
+#         # OpenAI API에 연결하기 위한 클라이언트 객체를 생성
+#         client = OpenAI(api_key = settings.GPT_API_KEY)
+        
+#         # 문단 나누는 로직
+#         paragragh_list = request.data["script"].split('<br><br>')
+#         results=[]
+
+#         for paragragh in paragragh_list:
+#             response = client.images.generate(
+#                 model='dall-e-3',
+#                 prompt=paragragh,
+#                 size='1024x1024',
+#                 quality='standard',
+#                 n=1,
+#             )
+            
+#             temp_dict={}
+#             temp_dict['text']=paragragh
+#             temp_dict['image_url']=response.data[0].url
+#             results.append(temp_dict)
+        
+#         print(type(results.data))
+        
+#         return Response({'status':'201', 'results':results}, status=status.HTTP_201_CREATED)
+
 class RequestImage(APIView):
     def post(self, request):
-        
-        # OpenAI API에 연결하기 위한 클라이언트 객체를 생성
-        client = OpenAI(api_key = settings.GPT_API_KEY)
-        
-        # 문단 나누는 로직
-        paragragh_list = request.data["script"].split('/n/n')
+        client = OpenAI(api_key=settings.GPT_API_KEY)
+        original_texts = request.data["original_script"].split('<br><br>')
+        translated_texts = request.data["translated_script"].split('<br><br>')
+        results = []
 
-        image_url_list = []
-
-        for paragragh in paragragh_list:
-            response = client.images.generate(
-            model='dall-e-3',
-            prompt=paragragh,
-            size='1024x1024',
-            quality='standard',
-            n=1,
+        @retry_with_exponential_backoff
+        def completions_with_backoff(**kwargs):
+            return client.images.generate(**kwargs)
+        
+        for (original_text,translated_text) in zip(original_texts,translated_texts):
+            response = completions_with_backoff(
+                model='dall-e-2',
+                prompt=f'"{original_text}" in a drawing of fairy tale style',
+                size='512x512',
+                quality='standard',
+                n=1,
             )
-            
-            image_url = response.data[0].url
-            image_url_list.append(image_url)
-        
-        return Response({'status':'201', 'paragraph_list':paragragh_list, 'image_url_list':image_url_list}, status=status.HTTP_201_CREATED)
+
+            print(response)
+            temp_dict = {'text': translated_text}
+
+            if isinstance(response.data, list) and len(response.data) > 0:
+                temp_dict['image_url'] = response.data[0].url
+            else:
+                temp_dict['image_url'] = 'Error or default image URL'
+
+            results.append(temp_dict)
+
+        return Response({'status': '201', 'results': results}, status=status.HTTP_201_CREATED)
 
 
 class StoryView(APIView):
@@ -165,12 +254,10 @@ class StoryView(APIView):
             image_url_list = request.data['image_url_list']
 
             image_file_list = []
-           
             for image_url in image_url_list:
                 response = requests.get(image_url)
                 if response.status_code == 200:
                     image_content = ContentFile(response.content)
-                   
                     image_content.name = 'story_image.jpg'
                     image_file_list.append(image_content)
 
@@ -180,9 +267,12 @@ class StoryView(APIView):
                 if content_serializer.is_valid():
                     content_serializer.save(story=story)
                 else:
+                    print(3)
                     return Response({'status':'400', 'error':'동화 페이지 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
             return Response({'status':'201', 'success':'동화가 작성되었습니다.'}, status=status.HTTP_201_CREATED)
-        return Response({'status':'400', 'error':'동화 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            print(serializer.errors)
+            return Response({'status':'400', 'error':'동화 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
     def delete(self, request, story_id):
