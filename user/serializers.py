@@ -46,6 +46,8 @@ class LoginSerializer(TokenObtainPairSerializer):
         
         if not user.check_password(request_password):
             raise exceptions.AuthenticationFailed({'status':'401', 'error':'비밀번호가 일치하지 않습니다.'})
+        elif user.is_active == False:
+            raise exceptions.AuthenticationFailed({'status':'403', 'error':'이메일 인증이 필요합니다.'})
         else:
             data = super().validate(request_data)
             return data
