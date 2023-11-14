@@ -195,7 +195,7 @@ class StoryView(APIView):
         if request.user.is_authenticated:
             if request.user == story.author:
                 story.delete()
-                return Response({'status':'204', 'success':'동화가 삭제되었습니다.'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'status':'204', 'success':'동화가 삭제되었습니다.'})
             else :
                 return Response({'status':'403', 'error':'삭제 권한이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
         else:
@@ -290,7 +290,7 @@ class CommentView(APIView):
             comment = get_object_or_404(Comment, id=comment_id)
             if request.user == comment.author:
                 comment.delete()
-                return Response({'status':'204', 'success':'댓글 삭제 완료'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'status':'204', 'success':'댓글 삭제 완료'})
             else:
                 return Response({'status':'403', 'error':'권한이 없습니다'}, status=status.HTTP_403_FORBIDDEN)
         else :

@@ -84,7 +84,7 @@ class UserInfoView(APIView):
         serializer = UserInfoSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({'status':'200', 'user_info':serializer.data}, status = status.HTTP_200_OK)
+            return Response({'status':'200', 'success':'회원 정보가 수정되었습니다.'}, status = status.HTTP_200_OK)
         else:
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -119,7 +119,7 @@ class UserInfoView(APIView):
         auth_user = authenticate(email=request.user.email, password=password)
         if auth_user:
             auth_user.delete()
-            return Response({'status': '204', 'success': '회원 탈퇴가 완료되었습니다.'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'status': '204', 'success': '회원 탈퇴가 완료되었습니다.'})
         else:
             return Response({'status': '401', 'error': '비밀번호가 불일치합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
 
