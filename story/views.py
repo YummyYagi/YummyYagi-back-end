@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer, StoryCreateSerializer, ContentCreateSerializer
 from rest_framework import status, exceptions
 from story.permissions import IsAuthenticated
-from rest_framework.generics import get_object_or_404 
+from rest_framework.generics import get_object_or_404
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 from django.conf import settings
 import deepl
@@ -228,10 +229,25 @@ class StoryView(APIView):
         story_id가 없을 경우 모든 계시물을 Response 합니다.
         story_id가 있을 경우 특정 게시물을 Response 합니다.
         """
+        page = request.GET.get('page', 1)
+        per_page = settings.REST_FRAMEWORK['PAGE_SIZE']
+        
         if story_id is None:
             stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at')
-            serializer = StoryListSerializer(stories, many=True)
-            return Response({'status':'200', 'story_list':serializer.data}, status=status.HTTP_200_OK)
+            paginator = Paginator(stories, per_page)
+            try:
+                stories_page = paginator.page(page)
+            except PageNotAnInteger:
+                stories_page = paginator.page(1)
+            except EmptyPage:
+                stories_page = paginator.page(paginator.num_pages)
+            serializer = StoryListSerializer(stories_page, many=True)
+            page_info = {
+                'current_page': stories_page.number,
+                'total_pages': paginator.num_pages,
+                'total_items': paginator.count,
+            }
+            return Response({'status': '200', 'story_list': serializer.data, 'page_info': page_info}, status=status.HTTP_200_OK)
         else:
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
