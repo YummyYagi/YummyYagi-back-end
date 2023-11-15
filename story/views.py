@@ -65,7 +65,6 @@ def retry_with_exponential_backoff(
     return wrapper
 
 class RequestFairytail(APIView):
-    @retry_with_exponential_backoff
     def post(self, request):
         
         # OpenAI(ChatGPT & DALL-E) API에 연결하기 위한 클라이언트 객체를 생성
