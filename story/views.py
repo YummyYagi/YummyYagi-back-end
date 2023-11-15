@@ -286,7 +286,7 @@ class StoryView(APIView):
                 if content_serializer.is_valid():
                     content_serializer.save(story=story)
                 else:
-                    print(3)
+                    
                     return Response({'status':'400', 'error':'동화 페이지 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
             return Response({'status':'201', 'success':'동화가 작성되었습니다.'}, status=status.HTTP_201_CREATED)
         else:
@@ -324,10 +324,14 @@ class LikeView(APIView):
 
         if request.user in story.like.all():
             story.like.remove(request.user)
-            return Response({'status':'200', 'success':'좋아요 취소'}, status=status.HTTP_200_OK)
+            story.save()
+            like_count = story.like.count()
+            return Response({'status':'200', 'success':'좋아요 취소', 'like_count': like_count}, status=status.HTTP_200_OK)
         else:
             story.like.add(request.user)
-            return Response({'status':'200', 'success':'좋아요'}, status=status.HTTP_200_OK)
+            story.save()
+            like_count = story.like.count()
+            return Response({'status':'200', 'success':'좋아요', 'like_count':like_count}, status=status.HTTP_200_OK)
             
     
 class HateView(APIView):
@@ -345,13 +349,14 @@ class HateView(APIView):
             story.hate.remove(request.user)
             story.hate_count -= 1
             story.save()
-
-            return Response({'status':'200', 'success':'싫어요 취소'}, status=status.HTTP_200_OK)
+            hate_count = story.hate.count()
+            return Response({'status':'200', 'success':'싫어요 취소', 'hate_count':hate_count}, status=status.HTTP_200_OK)
         else:
             story.hate.add(request.user)
             story.hate_count += 1
             story.save()
-            return Response({'status':'200', 'success':'싫어요'}, status=status.HTTP_200_OK)
+            hate_count = story.hate.count()
+            return Response({'status':'200', 'success':'싫어요', 'hate_count':hate_count}, status=status.HTTP_200_OK)
 
     
 class BookmarkView(APIView):
@@ -404,3 +409,13 @@ class CommentView(APIView):
                 return Response({'status':'403', 'error':'권한이 없습니다'}, status=status.HTTP_403_FORBIDDEN)
         else :
             return Response({'status':'401', 'error':'로그인 후 이용가능합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class KakaoShareView(APIView):
+    """카카오 API 키를 제공하는 뷰입니다."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        kakao_api_key = settings.KAKAO_API_KEY
+        return Response({'status':'200', 'kakao_api_key':kakao_api_key})

@@ -14,4 +14,6 @@ urlpatterns = [
 
     path('fairytail_gpt/', views.RequestFairytail.as_view(), name='request_fairytail_view'),
     path('image_dall-e/', views.RequestImage.as_view(), name='request_image_view'),
+    
+    path('kakao/', views.KakaoShareView.as_view(), name='kakao_share_view()'),
 ]

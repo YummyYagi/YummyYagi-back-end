@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from story.models import Story, Content, Comment
+from user.models import User
 
 class StoryCreateSerializer(serializers.ModelSerializer):
 
@@ -15,13 +16,19 @@ class ContentCreateSerializer(serializers.ModelSerializer):
 
 class ContentSerializer(serializers.ModelSerializer):
     content_id = serializers.CharField(source='id')
-    story_image = serializers.CharField(source='image')
+    story_image = serializers.ImageField(source='image')
     story_id = serializers.CharField(source='story.id')
+
     
     class Meta:
         model = Content
         fields = ['story_id', 'content_id', 'paragraph', 'story_image']
 
+class UserIdSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = User
+        fields = ['id',]
 
 class StorySerializer(serializers.ModelSerializer):
     story_id = serializers.CharField(source='id')
@@ -29,10 +36,28 @@ class StorySerializer(serializers.ModelSerializer):
     author_nickname = serializers.CharField(source='author.nickname')
     story_title = serializers.CharField(source='title')
     story_paragraph_list = ContentSerializer(source='contents', many=True)
+    bookmark_user_list = serializers.SerializerMethodField()
+    like_user_list = serializers.SerializerMethodField()
+    hate_user_list = serializers.SerializerMethodField()
+    
+    def get_bookmark_user_list(self, story):
+        users = story.bookmark.all()
+        user_data = UserIdSerializer(users, many=True).data
+        return user_data
+    
+    def get_like_user_list(self, story):
+        users = story.like.all()
+        user_data = UserIdSerializer(users, many=True).data
+        return user_data
+    
+    def get_hate_user_list(self, story):
+        users = story.hate.all()
+        user_data = UserIdSerializer(users, many=True).data
+        return user_data
 
     class Meta:
         model = Story
-        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'story_paragraph_list']
+        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'story_paragraph_list', 'bookmark_user_list', 'like_user_list', 'hate_user_list']
 
 
 class StoryListSerializer(serializers.ModelSerializer):
@@ -60,10 +85,11 @@ class CommentSerializer(serializers.ModelSerializer):
     comment_id = serializers.CharField(source='id')
     author_id = serializers.CharField(source='author')
     author_nickname = serializers.CharField(source='author.nickname')
+    author_image = serializers.ImageField(source='author.profile_img')
     
     class Meta:
         model = Comment
-        fields = ['comment_id', 'author_id', 'author_nickname', 'story_id', 'content']
+        fields = ['comment_id', 'author_id', 'author_nickname', 'story_id', 'content', 'author_image']
        
         
     def get_nickname(self, obj):
