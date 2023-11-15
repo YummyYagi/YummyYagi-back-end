@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.conf import settings
+from story.models import Story
 
 class UserManager(BaseUserManager):
 
@@ -78,6 +79,8 @@ class User(AbstractBaseUser) :
     profile_img = models.ImageField('프로필 이미지', upload_to='user/%Y/%m/', blank=True, default="user/default_profile.jpg")
     is_admin = models.BooleanField('관리자 여부', default=False)
     is_active = models.BooleanField('계정 활성화 여부', default=False)
+    recently_stories = models.ManyToManyField(Story, related_name='recently_stories', blank=True)
+
 
     objects = UserManager()
 
