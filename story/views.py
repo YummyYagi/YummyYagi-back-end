@@ -391,6 +391,8 @@ class CommentView(APIView):
         else :
             return Response({'status':'401', 'error':'로그인 후 이용가능합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class KakaoShareView(APIView):
     """카카오 API 키를 제공하는 뷰입니다."""
     
     permission_classes = [IsAuthenticated]
