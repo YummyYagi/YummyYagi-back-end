@@ -251,6 +251,10 @@ class StoryView(APIView):
         else:
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
+            if request.user.is_authenticated:
+                request.user.recently_stories.add(story)
+                request.user.save()
+                
             if story.hate_count < 5:
                 serializer = StorySerializer(story)
                 return Response({'status':'200', 'detail':serializer.data}, status=status.HTTP_200_OK)
