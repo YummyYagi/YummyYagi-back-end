@@ -32,7 +32,7 @@ class UserIdSerializer(serializers.ModelSerializer):
 
 class StorySerializer(serializers.ModelSerializer):
     story_id = serializers.CharField(source='id')
-    author_id = serializers.CharField(source='author')
+    author_id = serializers.CharField(source='author.id')
     author_nickname = serializers.CharField(source='author.nickname')
     story_title = serializers.CharField(source='title')
     story_paragraph_list = ContentSerializer(source='contents', many=True)
