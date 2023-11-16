@@ -55,7 +55,13 @@ class StoryListSerializer(serializers.ModelSerializer):
     author_country = serializers.CharField(source='author.country')
     story_title = serializers.CharField(source='title')
     content = serializers.SerializerMethodField(method_name='get_first_content')
-
+    like_user_list = serializers.SerializerMethodField()
+    
+    def get_like_user_list(self, story):
+            users = story.like.all()
+            user_data = UserIdSerializer(users, many=True).data
+            return user_data
+        
     def get_first_content(self, obj):
         first_content = obj.contents.first()
         if first_content:
@@ -66,7 +72,7 @@ class StoryListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Story
-        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content', 'author_country']
+        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content', 'author_country', 'like_user_list']
 
 
 class CommentSerializer(serializers.ModelSerializer):
