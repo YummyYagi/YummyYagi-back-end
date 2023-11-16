@@ -312,7 +312,7 @@ class CommentView(APIView):
     def get(self, request, story_id):
         """댓글을 조회합니다."""
         story = Story.objects.get(id=story_id)
-        comments = story.comment_set.all()
+        comments = story.comment_set.all().order_by('-id')
         serializer = CommentSerializer(comments, many=True)
         return Response({'status':'200', 'comments':serializer.data}, status=status.HTTP_200_OK)
     
