@@ -79,7 +79,7 @@ class User(AbstractBaseUser) :
     profile_img = models.ImageField('프로필 이미지', upload_to='user/%Y/%m/', blank=True, default="user/default_profile.jpg")
     is_admin = models.BooleanField('관리자 여부', default=False)
     is_active = models.BooleanField('계정 활성화 여부', default=False)
-    recently_stories = models.ManyToManyField(Story, related_name='recently_stories', blank=True)
+    recent_stories = models.ManyToManyField(Story, through='RecentStory')
 
 
     objects = UserManager()
@@ -102,6 +102,15 @@ class User(AbstractBaseUser) :
 
     class Meta:
         db_table = 'user'
+        
+        
+class RecentStory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']  
         
 
 class Claim(models.Model):
