@@ -14,56 +14,7 @@ from openai import OpenAI
 from googleapiclient import discovery
 import requests
 from django.core.files.base import ContentFile
-
-import random
-import time
-
-import openai
-
-def retry_with_exponential_backoff(
-    func,
-    initial_delay: float = 1,
-    exponential_base: float = 2,
-    jitter: bool = True,
-    max_retries: int = 10,
-    errors: tuple = (openai.RateLimitError,openai.BadRequestError,),
-):
-    """Retry a function with exponential backoff."""
-
-    def wrapper(*args, **kwargs):
-        # Initialize variables
-        num_retries = 0
-        delay = initial_delay
-
-        # Loop until a successful response or max_retries is hit or an exception is raised
-        while True:
-            try:
-                return func(*args, **kwargs)
-
-            # Retry on specified errors
-            except errors as e:
-                print(e)
-                # Increment retries
-                num_retries += 1
-
-                # Check if max retries has been reached
-                if num_retries > max_retries:
-                    raise Exception(
-                        f"Maximum number of retries ({max_retries}) exceeded."
-                    )
-
-                # Increment the delay
-                delay *= exponential_base * (1 + jitter * random.random())
-
-                # Sleep for the delay
-                time.sleep(delay)
-
-            # Raise exceptions for any errors not specified
-            except Exception as e:
-                print(e)
-                raise e
-
-    return wrapper
+from .backoff import retry_with_exponential_backoff
 
 class RequestFairytail(APIView):
     def post(self, request):
@@ -113,7 +64,7 @@ class RequestFairytail(APIView):
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_user_score > 0.3:
             print('입력한 문장에서 폭력성이 검출되었습니다. 점수 : ', pers_user_score)
-            return Response({'status':'200', 'success':'주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
+            return Response({'status':'200', 'message':'주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
 
         # GPT 질문 작성
         input_query = trans_result.text
@@ -121,8 +72,8 @@ class RequestFairytail(APIView):
         # GPT 메세지 설정
         input_gpt_messages = []
         input_gpt_messages.append(
-            {'role': 'system', 'content': 'You are a helpful assistant. You must not use violent language.'})
-        input_gpt_messages.append({'role': 'user', 'content': input_query}) 
+            {'role': 'system', 'content': "You are an excellent fairy tale writer.I will send the content of your fairy tale to DALL-E to create a picture, so make a fairy tale according to the topic I am talking about so as not to violate openai's content policy."})
+        input_gpt_messages.append({'role': 'user', 'content': f"fairy tale topic : {input_query}"}) 
         
         @retry_with_exponential_backoff
         def completions_with_backoff(**kwargs):
@@ -148,7 +99,7 @@ class RequestFairytail(APIView):
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_gpt_score > 0.3:
             print('GPT의 답변에서 폭력성이 검출되었습니다. 점수 : ', pers_gpt_score)
-            return Response({'status':'200', 'success':'생성된 동화 내용에 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
+            return Response({'status':'200', 'message':'생성된 동화 내용에 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
         
         gpt_trans_result = translator.translate_text(
             gpt_response, target_lang=request.data['target_language'])
@@ -159,36 +110,7 @@ class RequestFairytail(APIView):
         
         input_gpt_messages.append({'role': 'assistant', 'content': gpt_response})
         
-        return Response({'status':'200', 'success':'', 'original':gpt_response, 'translation':gpt_trans_result}, status=status.HTTP_200_OK)
-
-
-# class RequestImage(APIView):
-#     def post(self, request):
-        
-#         # OpenAI API에 연결하기 위한 클라이언트 객체를 생성
-#         client = OpenAI(api_key = settings.GPT_API_KEY)
-        
-#         # 문단 나누는 로직
-#         paragragh_list = request.data["script"].split('<br><br>')
-#         results=[]
-
-#         for paragragh in paragragh_list:
-#             response = client.images.generate(
-#                 model='dall-e-3',
-#                 prompt=paragragh,
-#                 size='1024x1024',
-#                 quality='standard',
-#                 n=1,
-#             )
-            
-#             temp_dict={}
-#             temp_dict['text']=paragragh
-#             temp_dict['image_url']=response.data[0].url
-#             results.append(temp_dict)
-        
-#         print(type(results.data))
-        
-#         return Response({'status':'201', 'results':results}, status=status.HTTP_201_CREATED)
+        return Response({'status':'200', 'message':'동화를 성공적으로 생성했습니다.', 'original':gpt_response, 'translation':gpt_trans_result}, status=status.HTTP_200_OK)
 
 class RequestImage(APIView):
     def post(self, request):
@@ -288,7 +210,7 @@ class StoryView(APIView):
                 else:
                     
                     return Response({'status':'400', 'error':'동화 페이지 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({'status':'201', 'success':'동화가 작성되었습니다.'}, status=status.HTTP_201_CREATED)
+            return Response({'status':'201', 'message':'동화가 작성되었습니다.'}, status=status.HTTP_201_CREATED)
         else:
             print(serializer.errors)
             return Response({'status':'400', 'error':'동화 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
