@@ -191,6 +191,7 @@ class StoryView(APIView):
         if serializer.is_valid():
             story = serializer.save(author = request.user)
 
+            story_id=story.id
             paragraph_list = request.data['paragraph_list']
             image_url_list = request.data['image_url_list']
 
@@ -210,7 +211,7 @@ class StoryView(APIView):
                 else:
                     
                     return Response({'status':'400', 'error':'동화 페이지 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({'status':'201', 'message':'동화가 작성되었습니다.'}, status=status.HTTP_201_CREATED)
+            return Response({'status':'201', 'success':'동화가 작성되었습니다.', 'story_id':story_id}, status=status.HTTP_201_CREATED)
         else:
             print(serializer.errors)
             return Response({'status':'400', 'error':'동화 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
