@@ -201,8 +201,14 @@ class StoryView(APIView):
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
             if request.user.is_authenticated:
-                request.user.recently_stories.add(story)
-                request.user.save()
+                if story not in request.user.recent_stories.all():
+                    request.user.recent_stories.add(story)
+                    request.user.save()
+                else :
+                    request.user.recent_stories.remove(story)
+                    request.user.save()
+                    request.user.recent_stories.add(story)
+                    request.user.save()
                 
             if story.hate_count < 5:
                 serializer = StorySerializer(story)
@@ -276,13 +282,13 @@ class LikeView(APIView):
             story.like.remove(request.user)
             story.like_count -= 1
             story.save()
-            like_count = story.like.count()
+            like_count = story.like_count
             return Response({'status':'200', 'success':'좋아요 취소', 'like_count': like_count}, status=status.HTTP_200_OK)
         else:
             story.like.add(request.user)
             story.like_count += 1
             story.save()
-            like_count = story.like.count()
+            like_count = story.like_count
             return Response({'status':'200', 'success':'좋아요', 'like_count':like_count}, status=status.HTTP_200_OK)
             
     
