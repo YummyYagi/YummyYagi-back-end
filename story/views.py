@@ -122,25 +122,32 @@ class RequestImage(APIView):
         @retry_with_exponential_backoff
         def completions_with_backoff(**kwargs):
             return client.images.generate(**kwargs)
-        
-        for (original_text,translated_text) in zip(original_texts,translated_texts):
-            response = completions_with_backoff(
-                model='dall-e-2',
-                prompt=f'"{original_text}" in a drawing of fairy tale style',
-                size='512x512',
-                quality='standard',
-                n=1,
-            )
+        temp_original_text=""
+        temp_translated_text=""
+        story_length=len(original_texts)-1
+        for i,(original_text,translated_text) in enumerate(zip(original_texts,translated_texts)):
+            temp_original_text+=original_text
+            temp_translated_text+=translated_text
+            if i%2==1 or i==story_length:
+                response = completions_with_backoff(
+                    model='dall-e-2',
+                    prompt=f'"{temp_original_text}" in a drawing of fairy tale style',
+                    size='512x512',
+                    quality='standard',
+                    n=1,
+                )
 
-            print(response)
-            temp_dict = {'text': translated_text}
+                print(response)
+                temp_dict = {'text': temp_translated_text}
 
-            if isinstance(response.data, list) and len(response.data) > 0:
-                temp_dict['image_url'] = response.data[0].url
-            else:
-                temp_dict['image_url'] = 'Error or default image URL'
+                if isinstance(response.data, list) and len(response.data) > 0:
+                    temp_dict['image_url'] = response.data[0].url
+                else:
+                    temp_dict['image_url'] = 'Error or default image URL'
 
-            results.append(temp_dict)
+                results.append(temp_dict)
+                temp_original_text=""
+                temp_translated_text=""
 
         return Response({'status': '201', 'results': results}, status=status.HTTP_201_CREATED)
 
