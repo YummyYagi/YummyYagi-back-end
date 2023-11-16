@@ -279,13 +279,13 @@ class HateView(APIView):
             story.hate.remove(request.user)
             story.hate_count -= 1
             story.save()
-            hate_count = story.hate.count()
+            hate_count = story.hate_count
             return Response({'status':'200', 'success':'싫어요 취소', 'hate_count':hate_count}, status=status.HTTP_200_OK)
         else:
             story.hate.add(request.user)
             story.hate_count += 1
             story.save()
-            hate_count = story.hate.count()
+            hate_count = story.hate_count
             return Response({'status':'200', 'success':'싫어요', 'hate_count':hate_count}, status=status.HTTP_200_OK)
 
     
