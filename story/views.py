@@ -152,6 +152,26 @@ class RequestImage(APIView):
         return Response({'status': '201', 'results': results}, status=status.HTTP_201_CREATED)
 
 
+class StorySortedByLikeView(APIView):
+    def get(self, request):
+        """
+        모든 게시물을 좋아요 순으로 8개만 Response 합니다.
+        """        
+        stories = Story.objects.exclude(hate_count__gt=5).order_by('-like_count', '-created_at')[:8] # 좋아요 많은 / 최신순
+        serializer = StoryListSerializer(stories, many=True)
+        return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
+        
+        
+class StorySortedByCountryView(APIView):
+    def get(self, request, author_country):
+        """
+        국가별 게시물을 Response 합니다.
+        """
+        stories = Story.objects.filter(hate_count__lte=5, author__country=author_country).order_by('-like_count', '-created_at')[:8] # 국가별 / 좋아요 많은 / 최신순
+        serializer = StoryListSerializer(stories, many=True)
+        return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
+
+
 class StoryView(APIView):
     def get(self, request, story_id = None):
         """
@@ -162,7 +182,7 @@ class StoryView(APIView):
         per_page = settings.REST_FRAMEWORK['PAGE_SIZE']
         
         if story_id is None:
-            stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at')
+            stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at') # 최신순
             paginator = Paginator(stories, per_page)
             try:
                 stories_page = paginator.page(page)
