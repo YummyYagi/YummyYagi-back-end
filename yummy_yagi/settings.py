@@ -149,12 +149,12 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 CELERY_RESULT_EXPIRES = 30
 CELERY_RESULT_EXTENDED = True
-CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_CACHE_BACKEND = 'default'
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': 'redis://redis:6379',
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'my_cache_table',
     }
 }
 
