@@ -1,20 +1,26 @@
 
 from rest_framework.views import APIView
-from story.models import Story, Comment
 from rest_framework.response import Response
-from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer, StoryCreateSerializer, ContentCreateSerializer
 from rest_framework import status, exceptions
-from story.permissions import IsAuthenticated
 from rest_framework.generics import get_object_or_404
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-
+from django.core.files.base import ContentFile
+from django.core.files.base import ContentFile
 from django.conf import settings
+from django.utils.timezone import now
+from itertools import chain
+import requests
+
 import deepl
 from openai import OpenAI
 from googleapiclient import discovery
-import requests
-from django.core.files.base import ContentFile
+
 from .backoff import retry_with_exponential_backoff
+from story.models import Story, Comment
+from user.models import UserStoryTimeStamp
+from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer, StoryCreateSerializer, ContentCreateSerializer
+from story.permissions import IsAuthenticated
+
 
 class RequestFairytail(APIView):
     def post(self, request):
@@ -200,15 +206,7 @@ class StoryView(APIView):
         else:
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
-            if request.user.is_authenticated:
-                if story not in request.user.recent_stories.all():
-                    request.user.recent_stories.add(story)
-                    request.user.save()
-                else :
-                    request.user.recent_stories.remove(story)
-                    request.user.save()
-                    request.user.recent_stories.add(story)
-                    request.user.save()
+            self.user_viewed(now(),story)
                 
             if story.hate_count < 5:
                 serializer = StorySerializer(story)
@@ -248,8 +246,7 @@ class StoryView(APIView):
         else:
             print(serializer.errors)
             return Response({'status':'400', 'error':'동화 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-
-
+    
     def delete(self, request, story_id):
         """작성된 게시글(동화)을 삭제하는 기능입니다."""
         try:
@@ -265,7 +262,15 @@ class StoryView(APIView):
                 return Response({'status':'403', 'error':'삭제 권한이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({'status':'401', 'error':'로그인 후 이용해주세요'}, status=status.HTTP_401_UNAUTHORIZED)
-
+    
+    def user_viewed(self,timestamp,story):
+        user=self.request.user
+        if not user.is_authenticated:
+            return
+        ust, _ =UserStoryTimeStamp.objects.get_or_create(user=user,story=story)
+        ust.timestamp=timestamp
+        ust.save()
+        return ust.timestamp
 
 class LikeView(APIView):
     

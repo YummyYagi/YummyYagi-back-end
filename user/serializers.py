@@ -1,8 +1,10 @@
 from rest_framework import serializers, exceptions
-from user.models import User, Claim
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from story.serializers import StoryListSerializer
 import re
+
+from user.models import User, Claim
+from story.serializers import StoryListSerializer
+from story.models import Story
 
 class UserSerializer(serializers.ModelSerializer):
     """회원가입을 위한 시리얼라이저입니다."""
@@ -65,11 +67,16 @@ class LoginSerializer(TokenObtainPairSerializer):
 class MypageSerializer(serializers.ModelSerializer):
     my_story_list = StoryListSerializer(source='story_set', many=True)
     bookmark_story_list = StoryListSerializer(source='bookmark_stories', many=True)
-    recent_stories = StoryListSerializer(many=True)
+    story_timestamps = serializers.SerializerMethodField(method_name='get_story_timestamps')
+    
+    def get_story_timestamps(self,obj):
+        stories=Story.objects.all().filter(timestamps__user=obj).order_by("-timestamps__timestamp")
+        return StoryListSerializer(stories,many=True).data
+    
 
     class Meta:
         model = User
-        fields = ['email', 'nickname', 'profile_img', 'country', 'bookmark_story_list', 'my_story_list', 'recent_stories']
+        fields = ['email', 'nickname', 'profile_img', 'country', 'bookmark_story_list', 'my_story_list', 'story_timestamps']
 
 
 class UserInfoSerializer(serializers.ModelSerializer):

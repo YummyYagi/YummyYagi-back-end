@@ -79,8 +79,6 @@ class User(AbstractBaseUser) :
     profile_img = models.ImageField('프로필 이미지', upload_to='user/%Y/%m/', blank=True, default="user/default_profile.jpg")
     is_admin = models.BooleanField('관리자 여부', default=False)
     is_active = models.BooleanField('계정 활성화 여부', default=False)
-    recent_stories = models.ManyToManyField(Story, through='RecentStory')
-
 
     objects = UserManager()
 
@@ -104,13 +102,10 @@ class User(AbstractBaseUser) :
         db_table = 'user'
         
         
-class RecentStory(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    story = models.ForeignKey(Story, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']  
+class UserStoryTimeStamp(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="timestamps")
+    story = models.ForeignKey(Story, on_delete=models.CASCADE,related_name="timestamps")
+    timestamp=models.DateTimeField("TTime Stamp",blank=True,null=True)
         
 
 class Claim(models.Model):
