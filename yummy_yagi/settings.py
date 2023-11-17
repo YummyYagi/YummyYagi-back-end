@@ -20,7 +20,7 @@ PRES_API_KEY = env('PRES_API_KEY')
 
 KAKAO_API_KEY = env('KAKAO_API_KEY')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
@@ -120,7 +120,7 @@ USE_I18N = True
 
 USE_TZ = False
 
-
+STATIC_ROOT = BASE_DIR / 'static'
 STATIC_URL = 'static/'
 
 MEDIA_ROOT = BASE_DIR / 'media'
