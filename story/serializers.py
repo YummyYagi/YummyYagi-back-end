@@ -77,7 +77,7 @@ class StoryListSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     comment_id = serializers.CharField(source='id')
-    author_id = serializers.CharField(source='author')
+    author_id = serializers.CharField(source='author.id')
     author_nickname = serializers.CharField(source='author.nickname')
     author_image = serializers.ImageField(source='author.profile_img')
     
