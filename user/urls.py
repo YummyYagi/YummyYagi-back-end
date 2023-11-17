@@ -9,4 +9,5 @@ urlpatterns = [
     path('info/', views.UserInfoView.as_view(), name='user_info_view'),
     path('qna/', views.QnaView.as_view(), name='qna_view'),
     path('pwd-reset/', views.PasswordResetView.as_view(), name='password_reset_view'),
+    path('verify-email-for-pw/<str:uidb64>/<str:token>/', views.SendRandomPassword.as_view(), name='send_random_password_view'),
 ]

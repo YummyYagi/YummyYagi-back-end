@@ -14,7 +14,7 @@ import string
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
-from .tasks import send_verification_email
+from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -140,7 +140,7 @@ class QnaView(APIView):
 
 
 class PasswordResetView(APIView):
-    """비밀번호 찾기 기능입니다."""
+    """랜덤 비밀번호 발급을 위한 인증 이메일을 보내는 뷰입니다."""
     def post(self, request):
         
         try:
@@ -148,16 +148,27 @@ class PasswordResetView(APIView):
         except User.DoesNotExist:
             return Response({'status':'400', 'error':'입력하신 이메일을 찾을 수 없습니다.'})
         
-        # 랜덤 비밀번호 생성
-        temp_password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
         
-        user.set_password(temp_password)
-        user.save()
+        # 이메일에 인증 링크 포함하여 보내기
+        verification_url = f'http://127.0.0.1:8000/user/verify-email-for-pw/{uid}/{token}/'
+        send_verification_email_for_pw.delay(user.id, verification_url, user.email)
         
-        subject = '임시 비밀번호 발급'
-        message = f'임시 비밀번호: {temp_password}'
-        from_email = 'yammyyagi@gmail.com'
-        recipient_list = [request.data['email']]
-        send_mail(subject, message, from_email, recipient_list)
-        
-        return Response({'status': '200', 'success': '임시 비밀번호가 이메일로 전송되었습니다.'}, status=status.HTTP_200_OK)
+        return Response({'status': '200', 'success': '임시 비밀번호 발급을 위한 인증 이메일이 전송되었습니다.'}, status=status.HTTP_200_OK)
+    
+class SendRandomPassword(APIView):
+    """인증 이메일 클릭 시 랜덤 비밀번호를 발급하는 뷰입니다."""
+    def get(self, request, uidb64, token):
+        uid = urlsafe_base64_decode(uidb64)
+        user = User.objects.get(id=uid)
+
+        if default_token_generator.check_token(user, token):
+            temp_password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))
+    
+            user.set_password(temp_password)
+            user.save()
+            
+            send_email_with_pw.delay(user.id, temp_password, user.email)
+            
+        return Response({'status': '200', 'success': '임시 비밀번호가 이메일로 발송되었습니다.'}, status=status.HTTP_200_OK)

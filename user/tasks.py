@@ -9,3 +9,21 @@ def send_verification_email(user_id, verification_url, recipient_email):        
     from_email = 'yammyyagi@gmail.com'
     print(f'subject:{subject}')
     send_mail(subject, message, from_email, [recipient_email])
+    
+    
+@shared_task
+def send_verification_email_for_pw(user_id, verification_url, recipient_email):
+    subject = '이메일 확인 링크'
+    message = f'이메일 확인을 완료하려면 다음 링크를 클릭하세요: {verification_url}'
+    from_email = 'yammyyagi@gmail.com'
+    print(f'subject:{subject}')
+    send_mail(subject, message, from_email, [recipient_email])
+
+
+@shared_task
+def send_email_with_pw(user_id, temp_password, recipient_email):
+    subject = '임시 비밀번호 발급'
+    message = f'임시 비밀번호: {temp_password}'
+    from_email = 'yammyyagi@gmail.com'
+    print(f'subject:{subject}')
+    send_mail(subject, message, from_email, [recipient_email])
