@@ -377,3 +377,33 @@ class KakaoShareView(APIView):
     def get(self, request):
         kakao_api_key = settings.KAKAO_API_KEY
         return Response({'status':'200', 'kakao_api_key':kakao_api_key})
+    
+
+class StoryTranslation(APIView):
+    """스토리 상세 페이지를 번역해주는 뷰입니다."""
+    def post(self, request):
+        try:
+            # Deepl API 키 설정
+            deepl_auth_key = settings.DEEPL_AUTH_KEY
+            translator = deepl.Translator(deepl_auth_key)
+            deepl_target_lang = request.data['target_language']
+        
+            # 제목 번역
+            trans_title_result = translator.translate_text(
+                request.data["story_title"], target_lang=deepl_target_lang)
+            trans_title_str_result = str(trans_title_result)
+            
+            translated_scripts = []
+            
+            # 스크립트 번역
+            for script in request.data["story_script"] :
+                trans_script_result = translator.translate_text(
+                script["paragraph"], target_lang=deepl_target_lang)
+
+                # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
+                trans_script_str_result = str(trans_script_result)
+                translated_scripts.append(trans_script_str_result)
+        
+            return Response({'status':'200', 'translated_scripts':translated_scripts, 'translated_title':trans_title_str_result}, status=status.HTTP_200_OK)
+        except:
+            return Response({'status':'400', 'error':'번역 실패'}, status=status.HTTP_400_BAD_REQUEST)

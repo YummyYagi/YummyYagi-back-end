@@ -18,4 +18,5 @@ urlpatterns = [
     path('image_dall-e/', views.RequestImage.as_view(), name='request_image_view'),
     
     path('kakao/', views.KakaoShareView.as_view(), name='kakao_share_view()'),
+    path('translation/', views.StoryTranslation.as_view(), name='story_translation'),
 ]
