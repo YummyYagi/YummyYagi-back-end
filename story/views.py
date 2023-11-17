@@ -152,6 +152,26 @@ class RequestImage(APIView):
         return Response({'status': '201', 'results': results}, status=status.HTTP_201_CREATED)
 
 
+class StorySortedByLikeView(APIView):
+    def get(self, request):
+        """
+        모든 게시물을 좋아요 순으로 8개만 Response 합니다.
+        """        
+        stories = Story.objects.exclude(hate_count__gt=5).order_by('-like_count', '-created_at')[:8] # 좋아요 많은 / 최신순
+        serializer = StoryListSerializer(stories, many=True)
+        return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
+        
+        
+class StorySortedByCountryView(APIView):
+    def get(self, request, author_country):
+        """
+        국가별 게시물을 Response 합니다.
+        """
+        stories = Story.objects.filter(hate_count__lte=5, author__country=author_country).order_by('-like_count', '-created_at')[:8] # 국가별 / 좋아요 많은 / 최신순
+        serializer = StoryListSerializer(stories, many=True)
+        return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
+
+
 class StoryView(APIView):
     def get(self, request, story_id = None):
         """
@@ -162,7 +182,7 @@ class StoryView(APIView):
         per_page = settings.REST_FRAMEWORK['PAGE_SIZE']
         
         if story_id is None:
-            stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at')
+            stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at') # 최신순
             paginator = Paginator(stories, per_page)
             try:
                 stories_page = paginator.page(page)
@@ -181,8 +201,14 @@ class StoryView(APIView):
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
             if request.user.is_authenticated:
-                request.user.recently_stories.add(story)
-                request.user.save()
+                if story not in request.user.recent_stories.all():
+                    request.user.recent_stories.add(story)
+                    request.user.save()
+                else :
+                    request.user.recent_stories.remove(story)
+                    request.user.save()
+                    request.user.recent_stories.add(story)
+                    request.user.save()
                 
             if story.hate_count < 5:
                 serializer = StorySerializer(story)
@@ -254,13 +280,15 @@ class LikeView(APIView):
 
         if request.user in story.like.all():
             story.like.remove(request.user)
+            story.like_count -= 1
             story.save()
-            like_count = story.like.count()
+            like_count = story.like_count
             return Response({'status':'200', 'success':'좋아요 취소', 'like_count': like_count}, status=status.HTTP_200_OK)
         else:
             story.like.add(request.user)
+            story.like_count += 1
             story.save()
-            like_count = story.like.count()
+            like_count = story.like_count
             return Response({'status':'200', 'success':'좋아요', 'like_count':like_count}, status=status.HTTP_200_OK)
             
     
@@ -279,13 +307,13 @@ class HateView(APIView):
             story.hate.remove(request.user)
             story.hate_count -= 1
             story.save()
-            hate_count = story.hate.count()
+            hate_count = story.hate_count
             return Response({'status':'200', 'success':'싫어요 취소', 'hate_count':hate_count}, status=status.HTTP_200_OK)
         else:
             story.hate.add(request.user)
             story.hate_count += 1
             story.save()
-            hate_count = story.hate.count()
+            hate_count = story.hate_count
             return Response({'status':'200', 'success':'싫어요', 'hate_count':hate_count}, status=status.HTTP_200_OK)
 
     
@@ -312,7 +340,7 @@ class CommentView(APIView):
     def get(self, request, story_id):
         """댓글을 조회합니다."""
         story = Story.objects.get(id=story_id)
-        comments = story.comment_set.all()
+        comments = story.comment_set.all().order_by('-id')
         serializer = CommentSerializer(comments, many=True)
         return Response({'status':'200', 'comments':serializer.data}, status=status.HTTP_200_OK)
     
@@ -349,3 +377,33 @@ class KakaoShareView(APIView):
     def get(self, request):
         kakao_api_key = settings.KAKAO_API_KEY
         return Response({'status':'200', 'kakao_api_key':kakao_api_key})
+    
+
+class StoryTranslation(APIView):
+    """스토리 상세 페이지를 번역해주는 뷰입니다."""
+    def post(self, request):
+        try:
+            # Deepl API 키 설정
+            deepl_auth_key = settings.DEEPL_AUTH_KEY
+            translator = deepl.Translator(deepl_auth_key)
+            deepl_target_lang = request.data['target_language']
+        
+            # 제목 번역
+            trans_title_result = translator.translate_text(
+                request.data["story_title"], target_lang=deepl_target_lang)
+            trans_title_str_result = str(trans_title_result)
+            
+            translated_scripts = []
+            
+            # 스크립트 번역
+            for script in request.data["story_script"] :
+                trans_script_result = translator.translate_text(
+                script["paragraph"], target_lang=deepl_target_lang)
+
+                # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
+                trans_script_str_result = str(trans_script_result)
+                translated_scripts.append(trans_script_str_result)
+        
+            return Response({'status':'200', 'translated_scripts':translated_scripts, 'translated_title':trans_title_str_result}, status=status.HTTP_200_OK)
+        except:
+            return Response({'status':'400', 'error':'번역 실패'}, status=status.HTTP_400_BAD_REQUEST)

@@ -32,32 +32,20 @@ class UserIdSerializer(serializers.ModelSerializer):
 
 class StorySerializer(serializers.ModelSerializer):
     story_id = serializers.CharField(source='id')
-    author_id = serializers.CharField(source='author')
+    author_id = serializers.CharField(source='author.id')
     author_nickname = serializers.CharField(source='author.nickname')
     story_title = serializers.CharField(source='title')
     story_paragraph_list = ContentSerializer(source='contents', many=True)
     bookmark_user_list = serializers.SerializerMethodField()
-    like_user_list = serializers.SerializerMethodField()
-    hate_user_list = serializers.SerializerMethodField()
-    
+
     def get_bookmark_user_list(self, story):
         users = story.bookmark.all()
         user_data = UserIdSerializer(users, many=True).data
         return user_data
     
-    def get_like_user_list(self, story):
-        users = story.like.all()
-        user_data = UserIdSerializer(users, many=True).data
-        return user_data
-    
-    def get_hate_user_list(self, story):
-        users = story.hate.all()
-        user_data = UserIdSerializer(users, many=True).data
-        return user_data
-
     class Meta:
         model = Story
-        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'story_paragraph_list', 'bookmark_user_list', 'like_user_list', 'hate_user_list']
+        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'story_paragraph_list', 'bookmark_user_list', 'like_count', 'hate_count']
 
 
 class StoryListSerializer(serializers.ModelSerializer):
@@ -67,7 +55,13 @@ class StoryListSerializer(serializers.ModelSerializer):
     author_country = serializers.CharField(source='author.country')
     story_title = serializers.CharField(source='title')
     content = serializers.SerializerMethodField(method_name='get_first_content')
-
+    like_user_list = serializers.SerializerMethodField()
+    
+    def get_like_user_list(self, story):
+            users = story.like.all()
+            user_data = UserIdSerializer(users, many=True).data
+            return user_data
+        
     def get_first_content(self, obj):
         first_content = obj.contents.first()
         if first_content:
@@ -78,7 +72,7 @@ class StoryListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Story
-        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content', 'author_country']
+        fields = ['story_id', 'author_id', 'author_nickname', 'story_title', 'content', 'author_country', 'like_user_list']
 
 
 class CommentSerializer(serializers.ModelSerializer):
