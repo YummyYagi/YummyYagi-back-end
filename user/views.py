@@ -112,7 +112,7 @@ class UserInfoView(APIView):
     def delete(self, request):
         """사용자의 회원 탈퇴 기능입니다."""
 
-        password = request.data.get("password", "")
+        password = request.data.get('password', '')
         if not password:
             return Response({'status': '400', 'error': '비밀번호를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
         

@@ -70,7 +70,7 @@ class MypageSerializer(serializers.ModelSerializer):
     story_timestamps = serializers.SerializerMethodField(method_name='get_story_timestamps')
     
     def get_story_timestamps(self,obj):
-        stories=Story.objects.all().filter(timestamps__user=obj).order_by("-timestamps__timestamp")
+        stories=Story.objects.all().filter(timestamps__user=obj).order_by('-timestamps__timestamp')
         return StoryListSerializer(stories,many=True).data
     
 
