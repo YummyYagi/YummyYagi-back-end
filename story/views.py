@@ -34,17 +34,17 @@ class RequestFairytail(APIView):
         deepl_target_lang = 'EN-US'
         
         # ChatGPT 모델 설정
-        model = "gpt-3.5-turbo"
+        model = 'gpt-3.5-turbo'
         
         # Perspective API 키 설정
         pres_api_key = settings.PRES_API_KEY
         
         # Perspective client 생성
         pers_client = discovery.build(
-            "commentanalyzer",
-            "v1alpha1",
+            'commentanalyzer',
+            'v1alpha1',
             developerKey=pres_api_key,
-            discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
+            discoveryServiceUrl='https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1',
             static_discovery=False,
         )
         
@@ -79,7 +79,7 @@ class RequestFairytail(APIView):
         input_gpt_messages = []
         input_gpt_messages.append(
             {'role': 'system', 'content': "You are an excellent fairy tale writer.I will send the content of your fairy tale to DALL-E to create a picture, so make a fairy tale according to the topic I am talking about so as not to violate openai's content policy."})
-        input_gpt_messages.append({'role': 'user', 'content': f"fairy tale topic : {input_query}"}) 
+        input_gpt_messages.append({'role': 'user', 'content': f'fairy tale topic : {input_query}'}) 
         
         @retry_with_exponential_backoff
         def completions_with_backoff(**kwargs):
@@ -121,15 +121,15 @@ class RequestFairytail(APIView):
 class RequestImage(APIView):
     def post(self, request):
         client = OpenAI(api_key=settings.GPT_API_KEY)
-        original_texts = request.data["original_script"].split('<br><br>')
-        translated_texts = request.data["translated_script"].split('<br><br>')
+        original_texts = request.data['original_script'].split('<br><br>')
+        translated_texts = request.data['translated_script'].split('<br><br>')
         results = []
 
         @retry_with_exponential_backoff
         def completions_with_backoff(**kwargs):
             return client.images.generate(**kwargs)
-        temp_original_text=""
-        temp_translated_text=""
+        temp_original_text=''
+        temp_translated_text=''
         story_length=len(original_texts)-1
         for i,(original_text,translated_text) in enumerate(zip(original_texts,translated_texts)):
             temp_original_text+=original_text
@@ -152,8 +152,8 @@ class RequestImage(APIView):
                     temp_dict['image_url'] = 'Error or default image URL'
 
                 results.append(temp_dict)
-                temp_original_text=""
-                temp_translated_text=""
+                temp_original_text=''
+                temp_translated_text=''
 
         return Response({'status': '201', 'results': results}, status=status.HTTP_201_CREATED)
 
@@ -163,7 +163,7 @@ class StorySortedByLikeView(APIView):
         """
         모든 게시물을 좋아요 순으로 8개만 Response 합니다.
         """        
-        stories = Story.objects.exclude(hate_count__gt=5).order_by('-like_count', '-created_at')[:8] # 좋아요 많은 / 최신순
+        stories = Story.objects.exclude(hate_count__gt=4).order_by('-like_count', '-created_at')[:8] # 좋아요 많은 / 최신순
         serializer = StoryListSerializer(stories, many=True)
         return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
         
@@ -173,7 +173,7 @@ class StorySortedByCountryView(APIView):
         """
         국가별 게시물을 Response 합니다.
         """
-        stories = Story.objects.filter(hate_count__lte=5, author__country=author_country).order_by('-like_count', '-created_at')[:8] # 국가별 / 좋아요 많은 / 최신순
+        stories = Story.objects.filter(hate_count__lte=4, author__country=author_country).order_by('-like_count', '-created_at')[:8] # 국가별 / 좋아요 많은 / 최신순
         serializer = StoryListSerializer(stories, many=True)
         return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
 
@@ -188,7 +188,7 @@ class StoryView(APIView):
         per_page = settings.REST_FRAMEWORK['PAGE_SIZE']
         
         if story_id is None:
-            stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at') # 최신순
+            stories = Story.objects.exclude(hate_count__gt=4).order_by('-created_at') # 최신순
             paginator = Paginator(stories, per_page)
             try:
                 stories_page = paginator.page(page)
@@ -212,7 +212,7 @@ class StoryView(APIView):
                 serializer = StorySerializer(story)
                 return Response({'status':'200', 'detail':serializer.data}, status=status.HTTP_200_OK)
             else:
-                return Response({'status':'403', 'error':"관리자만 열람 가능한 스토리입니다."}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'status':'403', 'error':'관리자만 열람 가능한 스토리입니다.'}, status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
@@ -395,15 +395,15 @@ class StoryTranslation(APIView):
         
             # 제목 번역
             trans_title_result = translator.translate_text(
-                request.data["story_title"], target_lang=deepl_target_lang)
+                request.data['story_title'], target_lang=deepl_target_lang)
             trans_title_str_result = str(trans_title_result)
             
             translated_scripts = []
             
             # 스크립트 번역
-            for script in request.data["story_script"] :
+            for script in request.data['story_script'] :
                 trans_script_result = translator.translate_text(
-                script["paragraph"], target_lang=deepl_target_lang)
+                script['paragraph'], target_lang=deepl_target_lang)
 
                 # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
                 trans_script_str_result = str(trans_script_result)
