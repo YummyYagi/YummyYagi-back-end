@@ -76,7 +76,7 @@ class User(AbstractBaseUser) :
     password = models.CharField('비밀번호', max_length=500)
     nickname = models.CharField('활동 아이디', max_length=30, unique=True)
     country = models.CharField('국가', choices=COUNTRY_CHOICES, max_length=50)
-    profile_img = models.ImageField('프로필 이미지', upload_to='user/%Y/%m/', blank=True, default="user/default_profile.jpg")
+    profile_img = models.ImageField('프로필 이미지', upload_to='user/%Y/%m/', blank=True, default='user/default_profile.jpg')
     is_admin = models.BooleanField('관리자 여부', default=False)
     is_active = models.BooleanField('계정 활성화 여부', default=False)
 
@@ -103,9 +103,9 @@ class User(AbstractBaseUser) :
         
         
 class UserStoryTimeStamp(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="timestamps")
-    story = models.ForeignKey(Story, on_delete=models.CASCADE,related_name="timestamps")
-    timestamp=models.DateTimeField("TTime Stamp",blank=True,null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name='timestamps')
+    story = models.ForeignKey(Story, on_delete=models.CASCADE,related_name='timestamps')
+    timestamp=models.DateTimeField('Time Stamp',blank=True,null=True)
         
 
 class Claim(models.Model):
@@ -114,7 +114,7 @@ class Claim(models.Model):
         - 로그인 한 사용자를 자동으로 지정합니다.
     - content : Q&A 내용입니다.
     """
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="작성자", on_delete=models.CASCADE)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='작성자', on_delete=models.CASCADE)
     content = models.TextField()
     
     class Meta:
