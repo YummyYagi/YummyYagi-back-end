@@ -20,7 +20,7 @@ PRES_API_KEY = env('PRES_API_KEY')
 
 KAKAO_API_KEY = env('KAKAO_API_KEY')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['backend']
 
 
 INSTALLED_APPS = [
@@ -81,19 +81,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'yummy_yagi.wsgi.application'
 
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': 'localhost',
-        'PORT': '5432',
+POSTGRES_DB=os.environ.get('POSTGRES_DB','')
+if POSTGRES_DB:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': POSTGRES_DB,
+            'USER': os.environ.get('POSTGRES_USER',''),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD',''),
+            'HOST': os.environ.get('POSTGRES_HOST',''),
+            'PORT': os.environ.get('POSTGRES_PORT',''),
+        }
     }
-}
-
-
+else:
+    DATABASES={
+        'default':{
+            'ENGINE':'django.db.backends.sqlite3',
+            'NAME':BASE_DIR/'db.sqlite3',
+        }
+    }
+CORS_ORIGIN_WHITELIST=['https://api.yummyyagi.com',]
+CSRF_TRUSTED_ORIGINS=CORS_ORIGIN_WHITELIST
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
