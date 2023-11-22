@@ -65,12 +65,20 @@ class LoginSerializer(TokenObtainPairSerializer):
 
 
 class MypageSerializer(serializers.ModelSerializer):
-    my_story_list = StoryListSerializer(source='story_set', many=True)
-    bookmark_story_list = StoryListSerializer(source='bookmark_stories', many=True)
+    my_story_list = serializers.SerializerMethodField(method_name='get_my_story_list')
+    bookmark_story_list = serializers.SerializerMethodField(method_name='get_bookmark_story_list')
     story_timestamps = serializers.SerializerMethodField(method_name='get_story_timestamps')
     
-    def get_story_timestamps(self,obj):
-        stories=Story.objects.all().filter(timestamps__user=obj).order_by('-timestamps__timestamp')
+    def get_my_story_list(self, obj):
+        my_stories = obj.story_set.filter(hate_count__lte=4).order_by('-created_at')
+        return StoryListSerializer(my_stories, many=True).data
+
+    def get_bookmark_story_list(self, obj):
+        bookmarked_stories = obj.bookmark_stories.filter(hate_count__lte=4).order_by('-created_at')
+        return StoryListSerializer(bookmarked_stories, many=True).data
+
+    def get_story_timestamps(self, obj):
+        stories=Story.objects.all().filter(hate_count__lte=4, timestamps__user=obj).order_by('-timestamps__timestamp')
         return StoryListSerializer(stories,many=True).data
     
 
