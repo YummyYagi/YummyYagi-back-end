@@ -20,7 +20,7 @@ PRES_API_KEY = env('PRES_API_KEY')
 
 KAKAO_API_KEY = env('KAKAO_API_KEY')
 
-ALLOWED_HOSTS = ['backend']
+ALLOWED_HOSTS = []
 
 
 INSTALLED_APPS = [
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'user',
     'story',
     
+    'django_celery_results',
     'django_celery_results',
 ]
 
@@ -100,7 +101,7 @@ else:
             'NAME':BASE_DIR/'db.sqlite3',
         }
     }
-CORS_ORIGIN_WHITELIST=['https://api.yummyyagi.com',]
+CORS_ORIGIN_WHITELIST=['https://127.0.0.1:8000',]
 CSRF_TRUSTED_ORIGINS=CORS_ORIGIN_WHITELIST
 AUTH_PASSWORD_VALIDATORS = [
     {
