@@ -30,7 +30,7 @@ class RegisterView(APIView):
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 # 이메일에 인증 링크 포함하여 보내기
-                verification_url = f'http://api.yummyyagi.com/user/verify-email/{uid}/{token}/'
+                verification_url = f'https://api.yummyyagi.com/user/verify-email/{uid}/{token}/'
                 send_verification_email.delay(user.id, verification_url, user.email)
                 
                 return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
@@ -152,7 +152,7 @@ class PasswordResetView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         
         # 이메일에 인증 링크 포함하여 보내기
-        verification_url = f'http://api.yummyyagi.com/user/verify-email-for-pw/{uid}/{token}/'
+        verification_url = f'https://api.yummyyagi.com/user/verify-email-for-pw/{uid}/{token}/'
         send_verification_email_for_pw.delay(user.id, verification_url, user.email)
         
         return Response({'status': '200', 'success': '임시 비밀번호 발급을 위한 인증 이메일이 전송되었습니다.'}, status=status.HTTP_200_OK)
