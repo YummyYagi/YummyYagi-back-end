@@ -8,7 +8,6 @@ from story.models import Story
 
 class UserSerializer(serializers.ModelSerializer):
     """회원가입을 위한 시리얼라이저입니다."""
-    
     password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
@@ -28,7 +27,6 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
-
 
 
 class LoginSerializer(TokenObtainPairSerializer):
