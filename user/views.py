@@ -60,9 +60,22 @@ class LoginView(TokenObtainPairView):
     DRF의 JWT 토큰 인증 로그인 방식에 기본 제공되는 클래스 뷰를 상속받아 재정의합니다.
     """
     serializer_class = LoginSerializer
+
+
+class SocialRegisterView(APIView):
+    """사용자 정보를 받아 회원가입 합니다."""
+    def post(self, request):
+        if request.data['password'] != request.data['password_check']:
+            return Response({'status':'400', 'error':'비밀번호를 확인해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = UserSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
+            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+   
     
-    
-BASE_URL = "http://127.0.0.1:5501/user/register.html"
+BASE_URL = "http://127.0.0.1:5501/user/social-register.html"
 
 class SocialUrlView(APIView):
     def post(self,request):
@@ -98,11 +111,9 @@ class KakaoLoginView(APIView):
         user_data = user_datajson["kakao_account"]
         email = user_data["email"]
         nickname = user_data["profile"]["nickname"]
-        
 
         try:
             user = User.objects.get(email=email)
-            print("1:", user.is_active)
             user.is_active = True
             user.save()
             refresh = RefreshToken.for_user(user)
@@ -117,6 +128,7 @@ class KakaoLoginView(APIView):
             )
         except:
             user = User.objects.create_user(email=email,nickname=nickname)
+            user.is_active = True
             user.set_unusable_password()
             user.save()
             refresh = RefreshToken.for_user(user)
