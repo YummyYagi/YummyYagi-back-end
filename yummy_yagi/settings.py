@@ -158,6 +158,10 @@ CACHES = {
     }
 }
 
+KAKAO_REST_API_KEY = env('KAKAO_REST_API_KEY')
+KAKAO_SECRET_KEY = env('KAKAO_SECRET_KEY')
+
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=720),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
