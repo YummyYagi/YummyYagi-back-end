@@ -1,4 +1,5 @@
 from rest_framework import status
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -15,6 +16,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
+import requests
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -56,6 +60,76 @@ class LoginView(TokenObtainPairView):
     DRF의 JWT 토큰 인증 로그인 방식에 기본 제공되는 클래스 뷰를 상속받아 재정의합니다.
     """
     serializer_class = LoginSerializer
+    
+    
+BASE_URL = "http://127.0.0.1:5501/user/register.html"
+
+class SocialUrlView(APIView):
+    def post(self,request):
+        social = request.data.get('social',None)
+        if social is None:
+            return Response({'error':'소셜로그인이 아닙니다'},status=status.HTTP_400_BAD_REQUEST)
+        elif social == 'kakao':
+            url = 'https://kauth.kakao.com/oauth/authorize?client_id=' + settings.KAKAO_REST_API_KEY + '&redirect_uri=' + BASE_URL + '&response_type=code&prompt=login'
+            return Response({'url':url},status=status.HTTP_200_OK)
+        
+
+class KakaoLoginView(APIView):
+    def post(self,request):
+        code = request.data.get('code')
+        access_token = requests.post("https://kauth.kakao.com/oauth/token",
+            headers={"Content-Type":"application/x-www-form-urlencoded"},
+            data={
+                "grant_type":"authorization_code",
+                "client_id": settings.KAKAO_REST_API_KEY,
+                "redirect_uri":BASE_URL,
+                "code":code,
+                'client_secret': settings.KAKAO_SECRET_KEY,
+            },
+        )
+        access_token = access_token.json().get("access_token")
+        user_data_request = requests.get("https://kapi.kakao.com/v2/user/me",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
+            },
+        )
+        user_datajson = user_data_request.json()
+        user_data = user_datajson["kakao_account"]
+        email = user_data["email"]
+        nickname = user_data["profile"]["nickname"]
+        
+
+        try:
+            user = User.objects.get(email=email)
+            print("1:", user.is_active)
+            user.is_active = True
+            user.save()
+            refresh = RefreshToken.for_user(user)
+            refresh["email"] = user.email
+            refresh["nickname"] = user.nickname
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK
+            )
+        except:
+            user = User.objects.create_user(email=email,nickname=nickname)
+            user.set_unusable_password()
+            user.save()
+            refresh = RefreshToken.for_user(user)
+            refresh["email"] = user.email
+            refresh["nickname"] = user.nickname
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    'status':'200',
+                },
+                status=status.HTTP_200_OK
+            )
 
 
 class MyPageView(APIView):
