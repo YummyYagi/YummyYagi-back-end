@@ -18,6 +18,7 @@ from django.utils.encoding import force_bytes
 from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
 import requests
 from rest_framework_simplejwt.tokens import RefreshToken
+import secrets
 
 
 class RegisterView(APIView):
@@ -75,7 +76,11 @@ class SocialRegisterView(APIView):
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
    
     
-BASE_URL = "http://127.0.0.1:5501/user/social-register.html"
+KAKAO_BASE_URL = "http://127.0.0.1:5501/user/social-register.html"
+GOOGLE_BASE_URL = "http://localhost:5501/user/social-register.html"
+NAVER_BASE_URL = "http://127.0.0.1:5501/user/social-register.html"
+
+STATE = secrets.token_urlsafe(16)
 
 class SocialUrlView(APIView):
     def post(self,request):
@@ -83,8 +88,19 @@ class SocialUrlView(APIView):
         if social is None:
             return Response({'error':'소셜로그인이 아닙니다'},status=status.HTTP_400_BAD_REQUEST)
         elif social == 'kakao':
-            url = 'https://kauth.kakao.com/oauth/authorize?client_id=' + settings.KAKAO_REST_API_KEY + '&redirect_uri=' + BASE_URL + '&response_type=code&prompt=login'
+            url = 'https://kauth.kakao.com/oauth/authorize?client_id=' + settings.KAKAO_REST_API_KEY + '&redirect_uri=' + KAKAO_BASE_URL + '&response_type=code&prompt=login'
             return Response({'url':url},status=status.HTTP_200_OK)
+        elif social == 'google':
+            client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
+            redirect_uri = GOOGLE_BASE_URL 
+            url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=email%20profile"
+            return Response({'url': url}, status=status.HTTP_200_OK)
+        elif social == 'naver':
+            url = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id="+ settings.SOCIAL_AUTH_NAVER_CLIENT_ID + "&redirect_uri=" + NAVER_BASE_URL + "&state=" + STATE
+            return Response({'url':url},status=status.HTTP_200_OK) 
+
+
+
         
 
 class KakaoLoginView(APIView):
@@ -95,7 +111,7 @@ class KakaoLoginView(APIView):
             data={
                 "grant_type":"authorization_code",
                 "client_id": settings.KAKAO_REST_API_KEY,
-                "redirect_uri":BASE_URL,
+                "redirect_uri":KAKAO_BASE_URL,
                 "code":code,
                 'client_secret': settings.KAKAO_SECRET_KEY,
             },
@@ -138,7 +154,139 @@ class KakaoLoginView(APIView):
                 {
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),
-                    'status':'200',
+                },
+                status=status.HTTP_200_OK
+            )
+
+
+class NaverLoginView(APIView):
+    def post(self, request):
+        code = request.data.get('code')
+        client_id = settings.SOCIAL_AUTH_NAVER_CLIENT_ID
+        client_secret = settings.SOCIAL_AUTH_NAVER_SECRET
+        redirect_uri = NAVER_BASE_URL
+        
+        # 네이버 API로 액세스 토큰 요청
+        access_token_request = requests.post("https://nid.naver.com/oauth2.0/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "grant_type": "authorization_code",
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+                "code": code,
+            },
+        )
+        
+        access_token_json = access_token_request.json()
+        access_token = access_token_json.get("access_token")
+
+        # 네이버 API로 사용자 정보 요청
+        user_data_request = requests.get("https://openapi.naver.com/v1/nid/me",
+            headers={"Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    },
+        )
+
+        user_data_json = user_data_request.json()
+        user_data = user_data_json.get("response")
+        email = user_data.get("email")
+        print(email)
+        nickname = user_data.get("nickname")
+        print(nickname)
+
+        try:
+            user = User.objects.get(email=email)
+            user.is_active = True
+            user.save()
+            refresh = RefreshToken.for_user(user)
+            refresh["email"] = user.email
+            print(user.email)
+            refresh["nickname"] = user.nickname
+            refresh["country"] = user.country
+            print(user.nickname)
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK
+            )
+        except:
+            user = User.objects.create_user(email=email, nickname=nickname)
+            user.is_active = True
+            user.set_unusable_password()
+            user.save()
+            refresh = RefreshToken.for_user(user)
+            refresh["email"] = user.email
+            refresh["name"] = user.nickname
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK
+            )
+
+
+class GoogleLoginView(APIView):
+    def post(self, request):
+        code = request.data.get('code')
+
+        client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
+        client_secret = settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
+        redirect_uri = GOOGLE_BASE_URL
+
+        #  구글 API로 액세스 토큰 요청
+        access_token_request = requests.post("https://oauth2.googleapis.com/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+                "scope": "email profile",
+            }
+        )
+        access_token_json = access_token_request.json()
+        access_token = access_token_json.get("access_token")
+        
+        # 구글 API로 사용자 정보 요청
+        user_data_request = requests.get("https://www.googleapis.com/oauth2/v1/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        user_data_json = user_data_request.json()
+        email = user_data_json.get("email")
+        nickname = user_data_json.get("name")
+
+        try:
+            user = User.objects.get(email=email)
+            user.is_active = True
+            user.save()
+            refresh = RefreshToken.for_user(user)
+            refresh["email"] = user.email
+            refresh["nickname"] = user.nickname
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK
+            )
+        except:
+            user = User.objects.create_user(email=email, nickname=nickname)
+            user.is_active = True
+            user.set_unusable_password()
+            user.save()
+            refresh = RefreshToken.for_user(user)
+            refresh["email"] = user.email
+            refresh["nickname"] = user.nickname
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
                 },
                 status=status.HTTP_200_OK
             )
