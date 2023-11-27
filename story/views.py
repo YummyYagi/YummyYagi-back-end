@@ -23,22 +23,21 @@ from story.permissions import IsAuthenticated
 
 
 class RequestFairytail(APIView):
+    """ChatGPT 동화 스토리 생성 뷰입니다."""
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        
+
         # OpenAI(ChatGPT & DALL-E) API에 연결하기 위한 클라이언트 객체를 생성
         client = OpenAI(api_key = settings.GPT_API_KEY)
-        
         # Deepl API 키 설정
         deepl_auth_key = settings.DEEPL_AUTH_KEY
         translator = deepl.Translator(deepl_auth_key)
         deepl_target_lang = 'EN-US'
-        
         # ChatGPT 모델 설정
         model = 'gpt-3.5-turbo'
-        
         # Perspective API 키 설정
         pres_api_key = settings.PRES_API_KEY
-        
         # Perspective client 생성
         pers_client = discovery.build(
             'commentanalyzer',
@@ -47,17 +46,17 @@ class RequestFairytail(APIView):
             discoveryServiceUrl='https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1',
             static_discovery=False,
         )
-        
+
         # User에게 질문 받기
         user_input_message = request.data['subject']
-        
+
         # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
         trans_result = translator.translate_text(
             user_input_message, target_lang=deepl_target_lang)
         
         # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
         trans_str_result = str(trans_result)
-        
+
         # Perspective API 사용하여 User가 입력한 질문에서 폭력성 검출하기
         analyze_request = {
             'comment': {'text': trans_str_result},
@@ -66,24 +65,25 @@ class RequestFairytail(APIView):
         pers_user_response = pers_client.comments().analyze(body=analyze_request).execute()
         pers_user_score = pers_user_response['attributeScores']['TOXICITY']['summaryScore']['value']
         print('폭력성 검열 전 수치 : ', pers_user_score)
-        
+
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_user_score > 0.3:
             print('입력한 문장에서 폭력성이 검출되었습니다. 점수 : ', pers_user_score)
-            return Response({'status':'200', 'message':'주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
+            return Response({'status':'400', 'error':'주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # GPT 질문 작성
         input_query = trans_result.text
-        
+
         # GPT 메세지 설정
         input_gpt_messages = []
         input_gpt_messages.append(
             {'role': 'system', 'content': "You are an excellent fairy tale writer.I will send the content of your fairy tale to DALL-E to create a picture, so make a fairy tale according to the topic I am talking about so as not to violate openai's content policy."})
-        input_gpt_messages.append({'role': 'user', 'content': f'fairy tale topic : {input_query}'}) 
-        
+        input_gpt_messages.append({'role': 'user', 'content': f'fairy tale topic : {input_query}'})
+
         @retry_with_exponential_backoff
         def completions_with_backoff(**kwargs):
             return client.chat.completions.create(**kwargs)
+
         # GPT 실행
         completion = completions_with_backoff(
             model=model,
@@ -92,7 +92,7 @@ class RequestFairytail(APIView):
         )
         gpt_response = completion.choices[0].message.content
         print(f'ChatGPT : {gpt_response}')
-        
+
         # Perspective API 사용하여 GPT가 답변한 내용에서 폭력성 검출하기
         analyze_request = {
             'comment': {'text': gpt_response},
@@ -101,22 +101,21 @@ class RequestFairytail(APIView):
         pers_gpt_response = pers_client.comments().analyze(body=analyze_request).execute()
         pers_gpt_score = pers_gpt_response['attributeScores']['TOXICITY']['summaryScore']['value']
         print('폭력성 검열 전 수치 : ', pers_gpt_score)
-        
+
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_gpt_score > 0.3:
             print('GPT의 답변에서 폭력성이 검출되었습니다. 점수 : ', pers_gpt_score)
-            return Response({'status':'200', 'message':'생성된 동화 내용에 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
-        
+            return Response({'status':'400', 'error':'생성된 동화 내용에 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+
         gpt_trans_result = translator.translate_text(
             gpt_response, target_lang=request.data['target_language'])
-        
+
         # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
         gpt_trans_result=str(gpt_trans_result)
         print(f'번역 ChatGPT : {gpt_trans_result}')
-        
         input_gpt_messages.append({'role': 'assistant', 'content': gpt_response})
-        
-        return Response({'status':'200', 'message':'동화를 성공적으로 생성했습니다.', 'original':gpt_response, 'translation':gpt_trans_result}, status=status.HTTP_200_OK)
+        return Response({'status':'201', 'success':'동화를 성공적으로 생성했습니다.', 'script':gpt_trans_result}, status=status.HTTP_200_OK)
+
 
 class RequestImage(APIView):
     def post(self, request):
