@@ -1,20 +1,23 @@
-from rest_framework import status
-from django.conf import settings
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.generics import get_object_or_404
-from user.models import User
-from user.permissions import IsAuthenticatedOrIsOwner
-from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer
-from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password
-from django.core.mail import send_mail
+import uuid
 import random
 import string
+import requests
+from datetime import datetime
+from django.conf import settings
+from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.generics import get_object_or_404
+from user.models import User, Ticket
+from user.permissions import IsAuthenticatedOrIsOwner, IsAuthenticated
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer, PaymentResultSerializer
 from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
 import requests
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -30,11 +33,17 @@ class RegisterView(APIView):
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
                 user=serializer.save()
+
+                # 회원가입 시 기본 티켓 제공
+                user_ticket = Ticket.objects.create(ticket_owner=user)
+
                 # 이메일 확인 토큰 생성
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
+
                 # 이메일에 인증 링크 포함하여 보내기
                 verification_url = f'http://127.0.0.1:8000/user/verify-email/{uid}/{token}/'
+                
                 send_verification_email.delay(user.id, verification_url, user.email)
                 
                 return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
@@ -259,3 +268,68 @@ class SendRandomPassword(APIView):
             send_email_with_pw.delay(user.id, temp_password, user.email)
             
         return Response({'status': '200', 'success': '임시 비밀번호가 이메일로 발송되었습니다.'}, status=status.HTTP_200_OK)
+
+
+class PaymentPageView(APIView):
+    """주문 정보 페이지를 로드하기 위한 뷰입니다."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        user = User.objects.get(id=request.user.id)
+        
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        unique_id = uuid.uuid4().hex[:6]  # 6자리의 무작위 문자열 생성
+        merchant_uid = f"{timestamp}-{unique_id}"
+        
+        order_data = {
+            'pg_cid' : settings.PG_CID,
+            'merchant_uid' : merchant_uid,
+            'amount' : request.data['amount'],
+            'name' : request.data['name'],
+            'buyer_email' : user.email,
+            'buyer_name' : user.nickname, 
+        }
+        
+        return Response({'status':'200', 'order_data':order_data}, status=status.HTTP_200_OK)
+
+
+class PaymentResult(APIView):
+    """결제 정보를 저장하는 뷰입니다."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        # 구매자 이메일과 현재 로그인한 사용자 이메일 비교
+        if request.user.email == request.data['rsp']['buyer_email']:
+            serializer = PaymentResultSerializer(data=request.data['rsp'])
+            print(serializer)
+            if serializer.is_valid():
+                result = serializer.save()
+
+                # 상품명에 'G'가 포함된 경우 (티켓 구매 / 상품명 : G0S0P0)
+                if 'G' in result.name:
+                    # 티켓 개수 추출
+                    tickets = result.name.split('_')
+                    golden_ticket_cnt = int(tickets[0].split('G')[1])
+                    silver_ticket_cnt = int(tickets[1].split('S')[1])
+                    pink_ticket_cnt = int(tickets[2].split('P')[1])
+
+                    # 사용자의 티켓 정보 업데이트
+                    user_tickets = Ticket.objects.get(ticket_owner = request.user)
+
+                    if golden_ticket_cnt > 0 :
+                        user_tickets.golden_ticket += golden_ticket_cnt
+                    
+                    if silver_ticket_cnt > 0 :
+                        user_tickets.silver_ticket += silver_ticket_cnt
+                    
+                    if pink_ticket_cnt > 0 :
+                        user_tickets.pink_ticket += silver_ticket_cnt
+                    
+                    user_tickets.save()
+                    
+                return Response({'status':'201', 'success':'결제 완료'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'status': '400', 'error': '유효하지 않은 데이터입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'status': '403', 'error': '인증된 사용자의 정보와 일치하지 않습니다.'}, status=status.HTTP_403_FORBIDDEN)
