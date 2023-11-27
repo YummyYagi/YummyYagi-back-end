@@ -282,3 +282,45 @@ class PaymentPageView(APIView):
         }
         
         return Response({'status':'200', 'order_data':order_data}, status=status.HTTP_200_OK)
+
+
+class PaymentResult(APIView):
+    """결제 정보를 저장하는 뷰입니다."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        # 구매자 이메일과 현재 로그인한 사용자 이메일 비교
+        if request.user.email == request.data['rsp']['buyer_email']:
+            serializer = PaymentResultSerializer(data=request.data['rsp'])
+            print(serializer)
+            if serializer.is_valid():
+                result = serializer.save()
+
+                # 상품명에 'G'가 포함된 경우 (티켓 구매 / 상품명 : G0S0P0)
+                if 'G' in result.name:
+                    # 티켓 개수 추출
+                    tickets = result.name.split('_')
+                    golden_ticket_cnt = int(tickets[0].split('G')[1])
+                    silver_ticket_cnt = int(tickets[1].split('S')[1])
+                    pink_ticket_cnt = int(tickets[2].split('P')[1])
+
+                    # 사용자의 티켓 정보 업데이트
+                    user_tickets = Ticket.objects.get(ticket_owner = request.user)
+
+                    if golden_ticket_cnt > 0 :
+                        user_tickets.golden_ticket += golden_ticket_cnt
+                    
+                    if silver_ticket_cnt > 0 :
+                        user_tickets.silver_ticket += silver_ticket_cnt
+                    
+                    if pink_ticket_cnt > 0 :
+                        user_tickets.pink_ticket += silver_ticket_cnt
+                    
+                    user_tickets.save()
+                    
+                return Response({'status':'201', 'success':'결제 완료'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'status': '400', 'error': '유효하지 않은 데이터입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'status': '403', 'error': '인증된 사용자의 정보와 일치하지 않습니다.'}, status=status.HTTP_403_FORBIDDEN)
