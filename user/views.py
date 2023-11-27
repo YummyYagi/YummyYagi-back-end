@@ -31,11 +31,17 @@ class RegisterView(APIView):
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
                 user=serializer.save()
+
+                # 회원가입 시 기본 티켓 제공
+                user_ticket = Ticket.objects.create(ticket_owner=user)
+
                 # 이메일 확인 토큰 생성
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
+
                 # 이메일에 인증 링크 포함하여 보내기
                 verification_url = f'http://127.0.0.1:8000/user/verify-email/{uid}/{token}/'
+                
                 send_verification_email.delay(user.id, verification_url, user.email)
                 
                 return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
