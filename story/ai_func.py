@@ -1,5 +1,6 @@
 from django.conf import settings
 from openai import OpenAI
+from openai._exceptions import OpenAIError
 import deepl
 from rest_framework import status
 from rest_framework.response import Response
