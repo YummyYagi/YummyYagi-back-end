@@ -115,13 +115,13 @@ class RequestImage(APIView):
         
         # OpenAI RateLimitError 처리
         except openai.RateLimitError as e:
-            error_message = '이미지 생성 중 예상치 못한 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+            error_message = '연속된 요청으로 이미지 생성 중 예상치 못한 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
             logging.exception(f'DALL-E) Rate Limit Error: {str(e)}')
             return Response({'status':'429', 'error':error_message}, status.HTTP_429_TOO_MANY_REQUESTS)
 
         # OpenAI BadRequestError 처리
         except openai.BadRequestError as e:
-            error_message = '이미지 생성이 불가능합니다. 내용을 수정해주세요.'
+            error_message = '정책상의 이유로 이미지 생성이 불가능합니다. 내용을 수정해주세요.'
             logging.exception(f'DALL-E) Bad Request Error: {str(e)}')
             return Response({'status':'400', 'error':error_message}, status.HTTP_400_BAD_REQUEST)
 
