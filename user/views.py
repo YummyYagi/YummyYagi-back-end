@@ -1,23 +1,24 @@
-from rest_framework import status
-from django.conf import settings
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.generics import get_object_or_404
-from user.models import User
-from user.permissions import IsAuthenticatedOrIsOwner
-from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer
-from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password
-from django.core.mail import send_mail
+import uuid
 import random
 import string
+import requests
+from datetime import datetime
+from django.conf import settings
+from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
-from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
-import requests
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.generics import get_object_or_404
+from user.models import User, Ticket
+from user.permissions import IsAuthenticatedOrIsOwner, IsAuthenticated
+from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer, PaymentResultSerializer
+from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
 
 
 class RegisterView(APIView):
@@ -258,3 +259,26 @@ class SendRandomPassword(APIView):
             send_email_with_pw.delay(user.id, temp_password, user.email)
             
         return Response({'status': '200', 'success': '임시 비밀번호가 이메일로 발송되었습니다.'}, status=status.HTTP_200_OK)
+
+
+class PaymentPageView(APIView):
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        user = User.objects.get(id=request.user.id)
+        
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        unique_id = uuid.uuid4().hex[:6]  # 6자리의 무작위 문자열 생성
+        merchant_uid = f"{timestamp}-{unique_id}"
+        
+        order_data = {
+            'pg_cid' : settings.PG_CID,
+            'merchant_uid' : merchant_uid,
+            'amount' : request.data['amount'],
+            'name' : request.data['name'],
+            'buyer_email' : user.email,
+            'buyer_name' : user.nickname, 
+        }
+        
+        return Response({'status':'200', 'order_data':order_data}, status=status.HTTP_200_OK)
