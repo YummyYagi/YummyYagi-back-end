@@ -9,13 +9,14 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
+from django.db.models import Sum
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import get_object_or_404
-from user.models import User, Ticket
+from user.models import User, Ticket, PaymentResult as PaymentResultModel
 from user.permissions import IsAuthenticatedOrIsOwner, IsAuthenticated
 from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer, PaymentResultSerializer
 from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
@@ -23,6 +24,7 @@ import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import redirect
 import secrets
+
 
 
 class RegisterView(APIView):
@@ -419,28 +421,42 @@ class SendRandomPassword(APIView):
         return Response({'status': '200', 'success': '임시 비밀번호가 이메일로 발송되었습니다.'}, status=status.HTTP_200_OK)
 
 
+def load_payment(request, user) :
+    """지금까지 사용자의 총 결제 금액과 현 요청 금액을 더한 값이 20000원 이하일 경우 실행되는 함수입니다."""
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    unique_id = uuid.uuid4().hex[:6]  # 6자리의 무작위 문자열 생성
+    merchant_uid = f"{timestamp}-{unique_id}"
+
+    order_data = {
+        'pg_cid' : settings.PG_CID,
+        'merchant_uid' : merchant_uid,
+        'amount' : request.data['amount'],
+        'name' : request.data['name'],
+        'buyer_email' : user.email,
+        'buyer_name' : user.nickname, 
+    }
+    return Response({'status':'200', 'order_data':order_data}, status=status.HTTP_200_OK)
+
 class PaymentPageView(APIView):
     """주문 정보 페이지를 로드하기 위한 뷰입니다."""
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
         user = User.objects.get(id=request.user.id)
-        
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        unique_id = uuid.uuid4().hex[:6]  # 6자리의 무작위 문자열 생성
-        merchant_uid = f"{timestamp}-{unique_id}"
-        
-        order_data = {
-            'pg_cid' : settings.PG_CID,
-            'merchant_uid' : merchant_uid,
-            'amount' : request.data['amount'],
-            'name' : request.data['name'],
-            'buyer_email' : user.email,
-            'buyer_name' : user.nickname, 
-        }
-        
-        return Response({'status':'200', 'order_data':order_data}, status=status.HTTP_200_OK)
 
+        # 사용자의 총 결제액 조회
+        user_total_payment = PaymentResultModel.objects.filter(buyer_email=user.email).aggregate(Sum('paid_amount'))
+        total_paid_amount = user_total_payment['paid_amount__sum'] or 0
+
+        # 새로운 결제 금액
+        new_payment_amount = int(request.data['amount'].split(' ')[0])
+
+        # 사용자 테스트를 위한 결제 제한 로직
+
+        if total_paid_amount + new_payment_amount >= 20000:
+            return Response({'status': '403', 'error': '죄송합니다. 결제 제한 초과로 인해 더 이상 결제를 진행할 수 없습니다. 현재까지 결제한 금액은 사용자별로 총 20,000원까지 허용됩니다.'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return load_payment(request, user)
 
 class PaymentResult(APIView):
     """결제 정보를 저장하는 뷰입니다."""
