@@ -89,9 +89,9 @@ class SocialRegisterView(APIView):
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
    
     
-KAKAO_BASE_URL = "http://127.0.0.1:5501/user/social-register.html"
-GOOGLE_BASE_URL = "http://localhost:5501/user/social-register.html"
-NAVER_BASE_URL = "http://127.0.0.1:5501/user/social-register.html"
+KAKAO_BASE_URL = "http://127.0.0.1:5501/user/register.html"
+GOOGLE_BASE_URL = "http://localhost:5501/user/register.html"
+NAVER_BASE_URL = "http://127.0.0.1:5501/user/register.html"
 
 STATE = secrets.token_urlsafe(16)
 
@@ -112,9 +112,6 @@ class SocialUrlView(APIView):
             url = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id="+ settings.SOCIAL_AUTH_NAVER_CLIENT_ID + "&redirect_uri=" + NAVER_BASE_URL + "&state=" + STATE
             return Response({'url':url},status=status.HTTP_200_OK) 
 
-
-
-        
 
 class KakaoLoginView(APIView):
     def post(self,request):
