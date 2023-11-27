@@ -20,6 +20,8 @@ PRES_API_KEY = env('PRES_API_KEY')
 
 KAKAO_API_KEY = env('KAKAO_API_KEY')
 
+PG_CID = env('PG_CID')
+
 ALLOWED_HOSTS = []
 
 

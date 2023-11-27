@@ -2,7 +2,7 @@ from rest_framework import serializers, exceptions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import re
 
-from user.models import User, Claim
+from user.models import User, Claim, PaymentResult
 from story.serializers import StoryListSerializer
 from story.models import Story
 
@@ -129,3 +129,17 @@ class QnaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Claim
         fields = ['content',]
+
+
+
+class PaymentResultSerializer(serializers.ModelSerializer):
+    """결제 결과 정보를 위한 시리얼라이저입니다."""
+
+    class Meta:
+        model = PaymentResult
+        fields = "__all__"
+    
+    def create(self, validated_data):
+        payment_result = PaymentResult(**validated_data)
+        payment_result.save()
+        return payment_result
