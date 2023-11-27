@@ -305,7 +305,7 @@ class PaymentPageView(APIView):
         # 사용자 테스트를 위한 결제 제한 로직
 
         if total_paid_amount + new_payment_amount >= 20000:
-            return Response({'status': '403', 'error': '죄송합니다. 결제 제한 초과로 인해 더 이상 결제를 진행할 수 없습니다. 현재까지 결제한 금액은 사용자별로 총 20,000원까지 허용됩니다.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'status': '400', 'error': '죄송합니다. 결제 제한 초과로 인해 더 이상 결제를 진행할 수 없습니다. 현재까지 결제한 금액은 사용자별로 총 20,000원까지 허용됩니다.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return load_payment(request, user)
 

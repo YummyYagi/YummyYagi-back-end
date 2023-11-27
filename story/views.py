@@ -159,19 +159,19 @@ class RequestImage(APIView):
                 if user_tickets.golden_ticket > 0:
                     return process_ticket_request(user_tickets.golden_ticket, trans_script, 'dall-e-3', 'hd')
                 else:
-                    return Response({'status': '400', 'error': '골드 티켓이 부족합니다.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'status': '402', 'error': '골드 티켓이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
             if ticket == 'silver_ticket':
                 if user_tickets.silver_ticket > 0:
                     return process_ticket_request(user_tickets.silver_ticket, trans_script, 'dall-e-3', 'standard')
                 else:
-                    return Response({'status': '400', 'error': '실버 티켓이 부족합니다.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'status': '402', 'error': '실버 티켓이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
             if ticket == 'pink_ticket':
                 if user_tickets.pink_ticket > 0:
                     return process_ticket_request(user_tickets.pink_ticket, trans_script, 'dall-e-2', 'standard')
                 else:
-                    return Response({'status': '400', 'error': '핑크 티켓이 부족합니다.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'status': '402', 'error': '핑크 티켓이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
             user_tickets.save()
         except Ticket.DoesNotExist:
