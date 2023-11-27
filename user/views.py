@@ -19,7 +19,9 @@ from user.models import User, Ticket
 from user.permissions import IsAuthenticatedOrIsOwner, IsAuthenticated
 from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer, PaymentResultSerializer
 from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
-
+import requests
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.shortcuts import redirect
 
 class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
@@ -57,7 +59,8 @@ class VerifyEmailView(APIView):
         if default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-        return Response(status=status.HTTP_200_OK)
+        url = "http://127.0.0.1:5501/user/login.html"
+        return redirect(url)
 
 
 class LoginView(TokenObtainPairView):
