@@ -113,7 +113,7 @@ class RequestFairytail(APIView):
         gpt_trans_result=str(gpt_trans_result)
         print(f'번역 ChatGPT : {gpt_trans_result}')
         input_gpt_messages.append({'role': 'assistant', 'content': gpt_response})
-        return Response({'status':'201', 'success':'동화를 성공적으로 생성했습니다.', 'script':gpt_trans_result}, status=status.HTTP_200_OK)
+        return Response({'status':'201', 'success':'동화를 성공적으로 생성했습니다.', 'script':gpt_trans_result}, status=status.HTTP_201_CREATED)
 
 
 def process_ticket_request(user_tickets, trans_script, d_model, quality):
