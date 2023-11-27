@@ -2,7 +2,7 @@ from rest_framework import serializers, exceptions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import re
 
-from user.models import User, Claim
+from user.models import User, Claim, PaymentResult
 from story.serializers import StoryListSerializer
 from story.models import Story
 
