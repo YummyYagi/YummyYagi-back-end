@@ -9,6 +9,8 @@ urlpatterns = [
     path('social-register/', views.SocialRegisterView.as_view(), name='social_register_view'),
     path('social/', views.SocialUrlView.as_view(), name='social_login'),
     path('kakao/', views.KakaoLoginView.as_view(), name='kakao_login'),
+    path('google/', views.GoogleLoginView.as_view(), name='google_login'),
+    path('naver/', views.NaverLoginView.as_view(), name='naver_login'),
     
     path('mypage/', views.MyPageView.as_view(), name='mypage_view'),
     path('info/', views.UserInfoView.as_view(), name='user_info_view'),
