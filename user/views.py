@@ -262,7 +262,7 @@ class SendRandomPassword(APIView):
 
 
 class PaymentPageView(APIView):
-    
+    """주문 정보 페이지를 로드하기 위한 뷰입니다."""
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
