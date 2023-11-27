@@ -1,4 +1,3 @@
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, exceptions
@@ -9,7 +8,9 @@ from django.conf import settings
 from django.utils.timezone import now
 import requests
 
+import logging
 import deepl
+import openai
 from openai import OpenAI
 from googleapiclient import discovery
 
@@ -20,6 +21,9 @@ from story.serializers import StoryListSerializer, StorySerializer, CommentSeria
 from story.permissions import IsAuthenticated
 
 from .ai_func import translateText, generate_images_from_text
+
+# 로그 파일의 이름을 'error.log'로 설정하고, 로그 레벨을 ERROR로 설정하여 ERROR 레벨 이상의 로그만 기록
+logging.basicConfig(filename='error.log', level=logging.ERROR)
 
 class RequestFairytail(APIView):
     """ChatGPT 동화 스토리 생성 뷰입니다."""
@@ -116,68 +120,60 @@ class RequestFairytail(APIView):
         return Response({'status':'201', 'success':'동화를 성공적으로 생성했습니다.', 'script':gpt_trans_result}, status=status.HTTP_201_CREATED)
 
 
-def process_ticket_request(user_tickets, trans_script, d_model, quality):
-    """DALL-E 실행 함수입니다."""
-    try:
-        # 이미지 생성 함수 호출
-        image_url = generate_images_from_text(trans_script, d_model, quality)
-
-        # 사용자의 해당 티켓 수량 차감
-        user_tickets -= 1
-
-        return Response({'status': '201', 'image_url': image_url}, status=status.HTTP_201_CREATED)
-    except Exception:
-        # 이미지 생성 중 예외 발생 시 처리
-        return Response({'status': '400', 'error': '죄송합니다. 이미지 생성 중 예기치 않은 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class RequestImage(APIView):
-    """DALL-E 이미지 생성 뷰입니다."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-
-        # 문단 내용 영어로 번역
-        script = request.data['script']
+        script = request.data.get('script', '')
 
         try:
-            # 번역 수행
+            # Deepl을 사용하여 텍스트 번역
             trans_script = translateText(script)
-        except:
-            # 번역 실패 시 사용자에게 알림
-            return Response({'status': '400', 'error': '번역에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as e:
+            self.logger.exception(f'DeePl) Translation Error: {str(e)}')
+            return Response({'status': '400', 'error': '번역에 실패했습니다. 내용을 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 티켓 정보 확인
-        ticket = request.data['ticket']
+        # 사용자가 요청한 티켓 타입 추출
+        ticket_type = request.data.get('ticket', '')
 
         try:
+            # 사용자의 티켓 정보 조회
             user_tickets = Ticket.objects.get(ticket_owner=request.user)
 
-            # 티켓 유형에 따라 처리
-            if ticket == 'golden_ticket':
-                if user_tickets.golden_ticket > 0:
-                    return process_ticket_request(user_tickets.golden_ticket, trans_script, 'dall-e-3', 'hd')
-                else:
-                    return Response({'status': '402', 'error': '골드 티켓이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            # 티켓 타입에 따라 이미지 생성 및 티켓 차감
+            if ticket_type == 'golden_ticket' and user_tickets.golden_ticket > 0:
+                image_url = generate_images_from_text(trans_script, 'dall-e-3', 'hd', user_tickets)
+                user_tickets.golden_ticket -= 1
+            elif ticket_type == 'silver_ticket' and user_tickets.silver_ticket > 0:
+                image_url = generate_images_from_text(trans_script, 'dall-e-3', 'standard', user_tickets)
+                user_tickets.silver_ticket -= 1
+            elif ticket_type == 'pink_ticket' and user_tickets.pink_ticket > 0:
+                image_url = generate_images_from_text(trans_script, 'dall-e-2', 'standard', user_tickets)
+                user_tickets.pink_ticket -= 1
+            else:
+                return Response({'status': '402', 'error': f'{ticket_type}이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
-            if ticket == 'silver_ticket':
-                if user_tickets.silver_ticket > 0:
-                    return process_ticket_request(user_tickets.silver_ticket, trans_script, 'dall-e-3', 'standard')
-                else:
-                    return Response({'status': '402', 'error': '실버 티켓이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
-
-            if ticket == 'pink_ticket':
-                if user_tickets.pink_ticket > 0:
-                    return process_ticket_request(user_tickets.pink_ticket, trans_script, 'dall-e-2', 'standard')
-                else:
-                    return Response({'status': '402', 'error': '핑크 티켓이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
-
+            # 티켓 차감 및 변경된 정보 저장
             user_tickets.save()
-        except Ticket.DoesNotExist:
-            # 티켓 정보를 불러올 수 없는 경우 에러 응답 전송
-            return Response({'status': '400', 'error': '티켓 정보를 불러올 수 없습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': '201', 'image_url': image_url}, status=status.HTTP_201_CREATED)
+        
+        # OpenAI RateLimitError 처리
+        except openai.RateLimitError as e:
+            error_message = '이미지 생성 중 예상치 못한 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+            logging.exception(f'DALL-E) Rate Limit Error: {str(e)}')
+            return Response({'status':'429', 'error':error_message}, status.HTTP_429_TOO_MANY_REQUESTS)
 
+        # OpenAI BadRequestError 처리
+        except openai.BadRequestError as e:
+            error_message = '이미지 생성이 불가능합니다. 내용을 수정해주세요.'
+            logging.exception(f'DALL-E) Bad Request Error: {str(e)}')
+            return Response({'status':'400', 'error':error_message}, status.HTTP_400_BAD_REQUEST)
+
+        # 그 외 예외 처리 및 로깅
+        except Exception as e:
+            error_message = '죄송합니다. 서버에서 오류가 발생했습니다. 문제가 지속되면 관리자에게 문의해주세요.'
+            logging.exception(f'DALL-E) Unexpected Error: {str(e)}')
+            return Response({'status':'500', 'error':error_message}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class StorySortedByLikeView(APIView):
     def get(self, request):
