@@ -108,6 +108,53 @@ class UserStoryTimeStamp(models.Model):
     timestamp=models.DateTimeField('Time Stamp',blank=True,null=True)
         
 
+class Ticket(models.Model):
+    """
+    - member : 티켓을 구매한 유저입니다.
+        - 티켓을 구매한 사용자를 자동으로 지정합니다.
+    - golden_ticket : 1등급 티켓입니다.
+        - DALL-E3 HD 엔진 API 요청을 통해 이미지를 생성합니다.
+    - silver_ticket : 2등급 티켓입니다.
+        - DALL-E3 Standard 엔진 API 요청을 통해 이미지를 생성합니다.
+    - pink_ticket : 3등급 티켓입니다.
+        - DALL-E2 엔진 API 요청을 통해 이미지를 생성합니다.
+    """
+    ticket_owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='작성자', related_name='tickets', on_delete=models.CASCADE)
+    golden_ticket = models.PositiveIntegerField('골드 티켓', default=1)
+    silver_ticket = models.PositiveIntegerField('실버 티켓', default=2)
+    pink_ticket = models.PositiveBigIntegerField('핑크 티켓', default=10)
+
+
+class PaymentResult(models.Model):
+    """
+    - buyer_email : 구매자의 이메일입니다.
+    - buyer_nickname : 구매자의 아이디입니다.
+    - name : 구매한 상품명입니다.
+    - paid_amount : 결제 금액입니다.
+    - currency : 화폐 단위
+    - pg_provider : 결제 프로세서입니다.
+    - pg_tic : 거래 식별자입니다. 결제 내역 조회, 환불 처리 등에 활용될 수 있습니다.
+    - pay_method : 결제 방법입니다.
+    - bank_name : 은행명입니다.
+    - card_name : 카드명입니다.
+    - card_number : 카드명입니다.
+    - receipt_url : 영수증 url입니다.
+    - status : 'ready', 'paid', 'canceled', 'failed' 등의 처리 상태입니다.
+    """
+    buyer_email = models.EmailField('구매자 이메일', max_length=255)
+    buyer_name = models.CharField('구매자 아이디', max_length=30)
+    name = models.CharField('구매 상품명', max_length=30)
+    paid_amount = models.PositiveBigIntegerField('결제 금액')
+    currency = models.CharField('통화', max_length=30)
+    pg_provider = models.CharField('결제 게이트웨이 제공자', max_length=30)
+    pg_tid = models.TextField('결제 ID')
+    pay_method = models.CharField('결제 방법', max_length=30)
+    bank_name = models.CharField('은행명', max_length=30, null=True, blank=True)
+    card_name = models.CharField('카드명', max_length=30, null=True, blank=True)
+    card_number = models.CharField('카드 번호', max_length=50, null=True, blank=True)
+    receipt_url = models.URLField('영수증 url', null=True, blank=True)
+    status = models.CharField('처리 상태', max_length=30)
+
 class Claim(models.Model):
     """
     - author : Q&A 작성자입니다.

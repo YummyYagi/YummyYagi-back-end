@@ -19,4 +19,7 @@ urlpatterns = [
     path('pwd-reset/', views.PasswordResetView.as_view(), name='password_reset_view'),
     
     path('verify-email-for-pw/<str:uidb64>/<str:token>/', views.SendRandomPassword.as_view(), name='send_random_password_view'),
+
+    path('payment-page/', views.PaymentPageView.as_view(), name='payment_page_view'),
+    path('payment-result/', views.PaymentResult.as_view(), name='payment_result_view'),
 ]

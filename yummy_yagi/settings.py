@@ -20,6 +20,8 @@ PRES_API_KEY = env('PRES_API_KEY')
 
 KAKAO_API_KEY = env('KAKAO_API_KEY')
 
+PG_CID = env('PG_CID')
+
 ALLOWED_HOSTS = []
 
 
@@ -133,6 +135,7 @@ DEFAULT_PROFILE_IMG = 'media/user/default_profile.jpg'
 
 AUTH_USER_MODEL = 'user.User'
 
+EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
