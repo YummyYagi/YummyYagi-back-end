@@ -12,7 +12,6 @@ import logging
 import deepl
 import openai
 
-from .backoff import retry_with_exponential_backoff
 from story.models import Story, Comment
 from user.models import UserStoryTimeStamp, Ticket
 from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer, StoryCreateSerializer, ContentCreateSerializer
@@ -22,6 +21,7 @@ from .ai_func import translateText, generate_images_from_text, loadDeeplModel, l
 
 # 로그 파일의 이름을 'error.log'로 설정하고, 로그 레벨을 ERROR로 설정하여 ERROR 레벨 이상의 로그만 기록
 logging.basicConfig(filename='error.log', level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 class RequestFairytail(APIView):
     def post(self, request):
@@ -34,12 +34,23 @@ class RequestFairytail(APIView):
         # User에게 질문 받기
         user_input_message = request.data['subject']
 
-        # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
-        trans_result = translateText(deepl_translator, user_input_message)
+        # User에게 받은 질문이 영어일 경우 번역 없이 폭력성 검사 진행
+        if user_input_message == 'EN-US' :
+            trans_str_result = user_input_message
+        else:
+            try:
+                # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
+                trans_result = translateText(deepl_translator, user_input_message)
 
-        # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
-        trans_str_result = str(trans_result)
-
+                # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
+                trans_str_result = str(trans_result)
+            except deepl.exceptions.QuotaExceededException as e:
+                logger.exception(f'DeePl) Quota exceeded: {str(e)}')
+                return Response({'status': '400', 'error': '번역에 실패했습니다. 관리자에게 문의해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError as e:
+                logger.exception(f'DeePl) Translation Error: {str(e)}')
+                return Response({'status': '400', 'error': '번역에 실패했습니다. 내용을 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Perspective API 사용하여 User가 입력한 질문에서 폭력성 검출하기
         pers_user_score = checkToxicity(pers_client, trans_str_result)
 
@@ -60,11 +71,22 @@ class RequestFairytail(APIView):
             print('GPT의 답변에서 폭력성이 검출되었습니다. 점수 : ', pers_gpt_score)
             return Response({'status':'400', 'error':'생성된 동화 내용에 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # 사용자가 선택한 언어로 GPT 답변 내용 번역
-        gpt_trans_result = translateText(deepl_translator, gpt_response, request.data['target_language'])
-
-        # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
-        gpt_trans_result = str(gpt_trans_result)
+        # 사용자가 선택한 언어가 영어일 경우 번역 없이 반환
+        if request.data['target_language'] == 'EN-US':
+            gpt_trans_result = gpt_response
+        else :
+            # 사용자가 선택한 언어로 GPT 답변 내용 번역
+            try:
+                gpt_trans_result = translateText(deepl_translator, gpt_response, request.data['target_language'])
+            except deepl.exceptions.QuotaExceededException as e:
+                logger.exception(f'DeePl) Quota exceeded: {str(e)}')
+                return Response({'status': '400', 'error': '번역에 실패했습니다. 관리자에게 문의해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError as e:
+                logger.exception(f'DeePl) Translation Error: {str(e)}')
+                return Response({'status': '400', 'error': '번역에 실패했습니다. 내용을 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
+            gpt_trans_result = str(gpt_trans_result)
         print(f'번역 ChatGPT : {gpt_trans_result}')
 
         input_gpt_messages.append(
@@ -84,10 +106,13 @@ class RequestImage(APIView):
             deepl_translator = loadDeeplModel()
             # Deepl을 사용하여 텍스트 번역
             trans_script = translateText(deepl_translator, script)
+        except deepl.exceptions.QuotaExceededException as e:
+            self.logger.exception(f'DeePl) Quota exceeded: {str(e)}')
+            return Response({'status': '400', 'error': '번역에 실패했습니다. 관리자에게 문의해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
         except ValueError as e:
             self.logger.exception(f'DeePl) Translation Error: {str(e)}')
             return Response({'status': '400', 'error': '번역에 실패했습니다. 내용을 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         # 사용자가 요청한 티켓 타입 추출
         ticket_type = request.data.get('ticket', '')
 
