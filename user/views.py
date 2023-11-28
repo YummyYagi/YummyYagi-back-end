@@ -39,7 +39,7 @@ class RegisterView(APIView):
                 user=serializer.save()
 
                 # 회원가입 시 기본 티켓 제공
-                user_ticket = Ticket.objects.create(ticket_owner=user)
+                Ticket.objects.create(ticket_owner=user)
 
                 # 이메일 확인 토큰 생성
                 token = default_token_generator.make_token(user)
@@ -156,8 +156,6 @@ class KakaoLoginView(APIView):
 
         try:
             user = User.objects.get(email=email)
-            user.is_active = True
-            user.save()
             refresh = RefreshToken.for_user(user)
             refresh["email"] = user.email
             refresh["nickname"] = user.nickname
@@ -178,6 +176,7 @@ class KakaoLoginView(APIView):
                 user.is_active = True
                 user.set_unusable_password()
                 user.save()
+                Ticket.objects.create(ticket_owner=user)
                 refresh = RefreshToken.for_user(user)
                 refresh["email"] = user.email
                 refresh["nickname"] = user.nickname
@@ -239,8 +238,6 @@ class NaverLoginView(APIView):
 
         try:
             user = User.objects.get(email=email)
-            user.is_active = True
-            user.save()
             refresh = RefreshToken.for_user(user)
             refresh["email"] = user.email
             refresh["nickname"] = user.nickname
@@ -261,6 +258,7 @@ class NaverLoginView(APIView):
                 user.is_active = True
                 user.set_unusable_password()
                 user.save()
+                Ticket.objects.create(ticket_owner=user)
                 refresh = RefreshToken.for_user(user)
                 refresh["email"] = user.email
                 refresh["nickname"] = user.nickname
@@ -318,8 +316,6 @@ class GoogleLoginView(APIView):
         }
         try:
             user = User.objects.get(email=email)
-            user.is_active = True
-            user.save()
             refresh = RefreshToken.for_user(user)
             refresh["email"] = user.email
             refresh["nickname"] = user.nickname
@@ -340,6 +336,7 @@ class GoogleLoginView(APIView):
                 user.is_active = True
                 user.set_unusable_password()
                 user.save()
+                Ticket.objects.create(ticket_owner=user)
                 refresh = RefreshToken.for_user(user)
                 refresh["email"] = user.email
                 refresh["nickname"] = user.nickname
