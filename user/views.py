@@ -84,13 +84,17 @@ class SocialRegisterView(APIView):
         else:
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                user=serializer.save()
+                
+                # 회원가입 시 기본 티켓 제공
+                user_ticket = Ticket.objects.create(ticket_owner=user)
+                
                 return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
    
     
 KAKAO_BASE_URL = "http://127.0.0.1:5501/user/register.html"
-GOOGLE_BASE_URL = "http://localhost:5501/user/register.html"
+GOOGLE_BASE_URL = "http://127.0.0.1:5501/user/register.html"
 NAVER_BASE_URL = "http://127.0.0.1:5501/user/register.html"
 
 STATE = secrets.token_urlsafe(16)
