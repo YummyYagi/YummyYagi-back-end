@@ -490,7 +490,7 @@ class PaymentResult(APIView):
                         user_tickets.silver_ticket += silver_ticket_cnt
                     
                     if pink_ticket_cnt > 0 :
-                        user_tickets.pink_ticket += silver_ticket_cnt
+                        user_tickets.pink_ticket += pink_ticket_cnt
                     
                     user_tickets.save()
                     
