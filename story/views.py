@@ -11,8 +11,6 @@ import requests
 import logging
 import deepl
 import openai
-from openai import OpenAI
-from googleapiclient import discovery
 
 from .backoff import retry_with_exponential_backoff
 from story.models import Story, Comment
@@ -73,6 +71,7 @@ class RequestFairytail(APIView):
             {'role': 'assistant', 'content': gpt_response})
         
         return Response({'status':'201', 'success':'동화를 성공적으로 생성했습니다.', 'script':gpt_trans_result}, status=status.HTTP_201_CREATED)
+
 
 class RequestImage(APIView):
     permission_classes = [IsAuthenticated]
