@@ -93,9 +93,9 @@ class SocialRegisterView(APIView):
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
    
     
-KAKAO_BASE_URL = "http://127.0.0.1:5501/user/register.html"
-GOOGLE_BASE_URL = "http://127.0.0.1:5501/user/register.html"
-NAVER_BASE_URL = "http://127.0.0.1:5501/user/register.html"
+KAKAO_BASE_URL = "http://127.0.0.1:5501/"
+GOOGLE_BASE_URL = "http://127.0.0.1:5501/"
+NAVER_BASE_URL = "http://127.0.0.1:5501/"
 
 STATE = secrets.token_urlsafe(16)
 
@@ -130,6 +130,10 @@ class KakaoLoginView(APIView):
                 'client_secret': settings.KAKAO_SECRET_KEY,
             },
         )
+
+        if access_token.status_code != 200:
+            return Response({"status":"400", "error": "카카오 로그인 실패. 다시 시도해주세요."}, status=status.HTTP_400_BAD_REQUEST)
+        
         access_token = access_token.json().get("access_token")
         user_data_request = requests.get("https://kapi.kakao.com/v2/user/me",
             headers={
@@ -139,8 +143,16 @@ class KakaoLoginView(APIView):
         )
         user_datajson = user_data_request.json()
         user_data = user_datajson["kakao_account"]
+
         email = user_data["email"]
         nickname = user_data["profile"]["nickname"]
+
+        data = {
+            "email" : email,
+            "password" : "aaaa1111~",
+            "nickname" : nickname,
+            "country" : "대한민국"
+        }
 
         try:
             user = User.objects.get(email=email)
@@ -149,6 +161,7 @@ class KakaoLoginView(APIView):
             refresh = RefreshToken.for_user(user)
             refresh["email"] = user.email
             refresh["nickname"] = user.nickname
+            refresh['profile_img'] = user.profile_img.url
             return Response(
                 {
                     "refresh": str(refresh),
@@ -157,19 +170,24 @@ class KakaoLoginView(APIView):
                 status=status.HTTP_200_OK
             )
         except:
-            user = User.objects.create_user(email=email,nickname=nickname)
-            user.is_active = True
-            user.set_unusable_password()
-            user.save()
-            refresh = RefreshToken.for_user(user)
-            refresh["email"] = user.email
-            refresh["nickname"] = user.nickname
-            return Response(
-                {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                },
-                status=status.HTTP_200_OK
+            serializer = UserSerializer(data = data)
+
+            if serializer.is_valid():
+                serializer.save()
+                user = User.objects.get(email=email)
+                user.is_active = True
+                user.set_unusable_password()
+                user.save()
+                refresh = RefreshToken.for_user(user)
+                refresh["email"] = user.email
+                refresh["nickname"] = user.nickname
+                refresh['profile_img'] = user.profile_img.url
+                return Response(
+                    {
+                        "refresh": str(refresh),
+                        "access": str(refresh.access_token),
+                    },
+                    status=status.HTTP_200_OK
             )
 
 
@@ -192,6 +210,9 @@ class NaverLoginView(APIView):
             },
         )
         
+        if access_token_request.status_code != 200:
+            return Response({"status":"400", "error": "네이버 로그인 실패. 다시 시도해주세요."}, status=status.HTTP_400_BAD_REQUEST)
+        
         access_token_json = access_token_request.json()
         access_token = access_token_json.get("access_token")
 
@@ -205,10 +226,16 @@ class NaverLoginView(APIView):
 
         user_data_json = user_data_request.json()
         user_data = user_data_json.get("response")
+
         email = user_data.get("email")
-        print(email)
         nickname = user_data.get("nickname")
-        print(nickname)
+
+        data = {
+            "email" : email,
+            "password" : "aaaa1111~",
+            "nickname" : nickname,
+            "country" : "대한민국"
+        }
 
         try:
             user = User.objects.get(email=email)
@@ -216,10 +243,8 @@ class NaverLoginView(APIView):
             user.save()
             refresh = RefreshToken.for_user(user)
             refresh["email"] = user.email
-            print(user.email)
             refresh["nickname"] = user.nickname
-            refresh["country"] = user.country
-            print(user.nickname)
+            refresh['profile_img'] = user.profile_img.url
             return Response(
                 {
                     "refresh": str(refresh),
@@ -228,19 +253,24 @@ class NaverLoginView(APIView):
                 status=status.HTTP_200_OK
             )
         except:
-            user = User.objects.create_user(email=email, nickname=nickname)
-            user.is_active = True
-            user.set_unusable_password()
-            user.save()
-            refresh = RefreshToken.for_user(user)
-            refresh["email"] = user.email
-            refresh["name"] = user.nickname
-            return Response(
-                {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                },
-                status=status.HTTP_200_OK
+            serializer = UserSerializer(data = data)
+
+            if serializer.is_valid():
+                serializer.save()
+                user = User.objects.get(email=email)
+                user.is_active = True
+                user.set_unusable_password()
+                user.save()
+                refresh = RefreshToken.for_user(user)
+                refresh["email"] = user.email
+                refresh["nickname"] = user.nickname
+                refresh['profile_img'] = user.profile_img.url
+                return Response(
+                    {
+                        "refresh": str(refresh),
+                        "access": str(refresh.access_token),
+                    },
+                    status=status.HTTP_200_OK
             )
 
 
@@ -264,6 +294,10 @@ class GoogleLoginView(APIView):
                 "scope": "email profile",
             }
         )
+
+        if access_token_request.status_code != 200:
+            return Response({"status":"400", "error": "구글 로그인 실패. 다시 시도해주세요."}, status=status.HTTP_400_BAD_REQUEST)
+        
         access_token_json = access_token_request.json()
         access_token = access_token_json.get("access_token")
         
@@ -272,9 +306,16 @@ class GoogleLoginView(APIView):
             headers={"Authorization": f"Bearer {access_token}"},
         )
         user_data_json = user_data_request.json()
+
         email = user_data_json.get("email")
         nickname = user_data_json.get("name")
 
+        data = {
+            "email" : email,
+            "password" : "aaaa1111~",
+            "nickname" : nickname,
+            "country" : "대한민국"
+        }
         try:
             user = User.objects.get(email=email)
             user.is_active = True
@@ -282,6 +323,7 @@ class GoogleLoginView(APIView):
             refresh = RefreshToken.for_user(user)
             refresh["email"] = user.email
             refresh["nickname"] = user.nickname
+            refresh['profile_img'] = user.profile_img.url
             return Response(
                 {
                     "refresh": str(refresh),
@@ -290,19 +332,24 @@ class GoogleLoginView(APIView):
                 status=status.HTTP_200_OK
             )
         except:
-            user = User.objects.create_user(email=email, nickname=nickname)
-            user.is_active = True
-            user.set_unusable_password()
-            user.save()
-            refresh = RefreshToken.for_user(user)
-            refresh["email"] = user.email
-            refresh["nickname"] = user.nickname
-            return Response(
-                {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                },
-                status=status.HTTP_200_OK
+            serializer = UserSerializer(data = data)
+
+            if serializer.is_valid():
+                serializer.save()
+                user = User.objects.get(email=email)
+                user.is_active = True
+                user.set_unusable_password()
+                user.save()
+                refresh = RefreshToken.for_user(user)
+                refresh["email"] = user.email
+                refresh["nickname"] = user.nickname
+                refresh['profile_img'] = user.profile_img.url
+                return Response(
+                    {
+                        "refresh": str(refresh),
+                        "access": str(refresh.access_token),
+                    },
+                    status=status.HTTP_200_OK
             )
 
 
