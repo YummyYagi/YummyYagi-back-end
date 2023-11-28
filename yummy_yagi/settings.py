@@ -20,6 +20,8 @@ PRES_API_KEY = env('PRES_API_KEY')
 
 KAKAO_API_KEY = env('KAKAO_API_KEY')
 
+PG_CID = env('PG_CID')
+
 ALLOWED_HOSTS = []
 
 
@@ -142,6 +144,7 @@ DEFAULT_PROFILE_IMG = 'media/user/default_profile.jpg'
 
 AUTH_USER_MODEL = 'user.User'
 
+EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
@@ -158,14 +161,24 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 CELERY_RESULT_EXPIRES = 30
 CELERY_RESULT_EXTENDED = True
-CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_CACHE_BACKEND = 'default'
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': 'redis://redis:6379',
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'my_cache_table',
     }
 }
+
+KAKAO_REST_API_KEY = env('KAKAO_REST_API_KEY')
+KAKAO_SECRET_KEY = env('KAKAO_SECRET_KEY')
+
+SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
+SOCIAL_AUTH_GOOGLE_CLIENT_SECRET= env('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
+
+SOCIAL_AUTH_NAVER_CLIENT_ID = env('SOCIAL_AUTH_NAVER_CLIENT_ID')
+SOCIAL_AUTH_NAVER_SECRET = env('SOCIAL_AUTH_NAVER_SECRET')
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=720),

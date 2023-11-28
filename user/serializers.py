@@ -2,13 +2,12 @@ from rest_framework import serializers, exceptions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import re
 
-from user.models import User, Claim
+from user.models import User, Claim, PaymentResult
 from story.serializers import StoryListSerializer
 from story.models import Story
 
 class UserSerializer(serializers.ModelSerializer):
     """회원가입을 위한 시리얼라이저입니다."""
-    
     password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
@@ -28,7 +27,6 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
-
 
 
 class LoginSerializer(TokenObtainPairSerializer):
@@ -65,12 +63,20 @@ class LoginSerializer(TokenObtainPairSerializer):
 
 
 class MypageSerializer(serializers.ModelSerializer):
-    my_story_list = StoryListSerializer(source='story_set', many=True)
-    bookmark_story_list = StoryListSerializer(source='bookmark_stories', many=True)
+    my_story_list = serializers.SerializerMethodField(method_name='get_my_story_list')
+    bookmark_story_list = serializers.SerializerMethodField(method_name='get_bookmark_story_list')
     story_timestamps = serializers.SerializerMethodField(method_name='get_story_timestamps')
     
-    def get_story_timestamps(self,obj):
-        stories=Story.objects.all().filter(timestamps__user=obj).order_by("-timestamps__timestamp")
+    def get_my_story_list(self, obj):
+        my_stories = obj.story_set.filter(hate_count__lte=4).order_by('-created_at')
+        return StoryListSerializer(my_stories, many=True).data
+
+    def get_bookmark_story_list(self, obj):
+        bookmarked_stories = obj.bookmark_stories.filter(hate_count__lte=4).order_by('-created_at')
+        return StoryListSerializer(bookmarked_stories, many=True).data
+
+    def get_story_timestamps(self, obj):
+        stories=Story.objects.all().filter(hate_count__lte=4, timestamps__user=obj).order_by('-timestamps__timestamp')
         return StoryListSerializer(stories,many=True).data
     
 
@@ -123,3 +129,17 @@ class QnaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Claim
         fields = ['content',]
+
+
+
+class PaymentResultSerializer(serializers.ModelSerializer):
+    """결제 결과 정보를 위한 시리얼라이저입니다."""
+
+    class Meta:
+        model = PaymentResult
+        fields = "__all__"
+    
+    def create(self, validated_data):
+        payment_result = PaymentResult(**validated_data)
+        payment_result.save()
+        return payment_result

@@ -1,169 +1,142 @@
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, exceptions
 from rest_framework.generics import get_object_or_404
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.files.base import ContentFile
-from django.core.files.base import ContentFile
 from django.conf import settings
 from django.utils.timezone import now
-from itertools import chain
 import requests
 
+import logging
 import deepl
+import openai
 from openai import OpenAI
 from googleapiclient import discovery
 
 from .backoff import retry_with_exponential_backoff
 from story.models import Story, Comment
-from user.models import UserStoryTimeStamp
+from user.models import UserStoryTimeStamp, Ticket
 from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer, StoryCreateSerializer, ContentCreateSerializer
 from story.permissions import IsAuthenticated
 
+from .ai_func import translateText, generate_images_from_text, loadDeeplModel, loadOpenAIModel, loadPersModel, runGPT, checkToxicity, setupGPTMessages
+
+# 로그 파일의 이름을 'error.log'로 설정하고, 로그 레벨을 ERROR로 설정하여 ERROR 레벨 이상의 로그만 기록
+logging.basicConfig(filename='error.log', level=logging.ERROR)
 
 class RequestFairytail(APIView):
     def post(self, request):
-        
-        # OpenAI(ChatGPT & DALL-E) API에 연결하기 위한 클라이언트 객체를 생성
-        client = OpenAI(api_key = settings.GPT_API_KEY)
-        
-        # Deepl API 키 설정
-        deepl_auth_key = settings.DEEPL_AUTH_KEY
-        translator = deepl.Translator(deepl_auth_key)
-        deepl_target_lang = 'EN-US'
-        
-        # ChatGPT 모델 설정
-        model = "gpt-3.5-turbo"
-        
-        # Perspective API 키 설정
-        pres_api_key = settings.PRES_API_KEY
-        
-        # Perspective client 생성
-        pers_client = discovery.build(
-            "commentanalyzer",
-            "v1alpha1",
-            developerKey=pres_api_key,
-            discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
-            static_discovery=False,
-        )
-        
+
+        # 모델 로드하기
+        deepl_translator = loadDeeplModel()
+        openAI_client, chatGPT_model = loadOpenAIModel()
+        pers_client = loadPersModel()
+
         # User에게 질문 받기
         user_input_message = request.data['subject']
-        
+
         # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
-        trans_result = translator.translate_text(
-            user_input_message, target_lang=deepl_target_lang)
-        
+        trans_result = translateText(deepl_translator, user_input_message)
+
         # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
         trans_str_result = str(trans_result)
-        
+
         # Perspective API 사용하여 User가 입력한 질문에서 폭력성 검출하기
-        analyze_request = {
-            'comment': {'text': trans_str_result},
-            'requestedAttributes': {'TOXICITY': {}},
-        }
-        pers_user_response = pers_client.comments().analyze(body=analyze_request).execute()
-        pers_user_score = pers_user_response['attributeScores']['TOXICITY']['summaryScore']['value']
-        print('폭력성 검열 전 수치 : ', pers_user_score)
-        
+        pers_user_score = checkToxicity(pers_client, trans_str_result)
+
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_user_score > 0.3:
             print('입력한 문장에서 폭력성이 검출되었습니다. 점수 : ', pers_user_score)
-            return Response({'status':'200', 'message':'주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
+            return Response({'status':'400', 'error':'주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)        # GPT 메세지 설정
+        input_gpt_messages = setupGPTMessages(trans_result)
 
-        # GPT 질문 작성
-        input_query = trans_result.text
-        
-        # GPT 메세지 설정
-        input_gpt_messages = []
-        input_gpt_messages.append(
-            {'role': 'system', 'content': "You are an excellent fairy tale writer.I will send the content of your fairy tale to DALL-E to create a picture, so make a fairy tale according to the topic I am talking about so as not to violate openai's content policy."})
-        input_gpt_messages.append({'role': 'user', 'content': f"fairy tale topic : {input_query}"}) 
-        
-        @retry_with_exponential_backoff
-        def completions_with_backoff(**kwargs):
-            return client.chat.completions.create(**kwargs)
         # GPT 실행
-        completion = completions_with_backoff(
-            model=model,
-            messages=input_gpt_messages,
-            temperature=1.3,
-        )
-        gpt_response = completion.choices[0].message.content
-        print(f'ChatGPT : {gpt_response}')
-        
+        gpt_response = runGPT(openAI_client, chatGPT_model, input_gpt_messages)
+
         # Perspective API 사용하여 GPT가 답변한 내용에서 폭력성 검출하기
-        analyze_request = {
-            'comment': {'text': gpt_response},
-            'requestedAttributes': {'TOXICITY': {}},
-        }
-        pers_gpt_response = pers_client.comments().analyze(body=analyze_request).execute()
-        pers_gpt_score = pers_gpt_response['attributeScores']['TOXICITY']['summaryScore']['value']
-        print('폭력성 검열 전 수치 : ', pers_gpt_score)
-        
+        pers_gpt_score = checkToxicity(pers_client, gpt_response)
+
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_gpt_score > 0.3:
             print('GPT의 답변에서 폭력성이 검출되었습니다. 점수 : ', pers_gpt_score)
-            return Response({'status':'200', 'message':'생성된 동화 내용에 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_200_OK)
+            return Response({'status':'400', 'error':'생성된 동화 내용에 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        gpt_trans_result = translator.translate_text(
-            gpt_response, target_lang=request.data['target_language'])
-        
+        # 사용자가 선택한 언어로 GPT 답변 내용 번역
+        gpt_trans_result = translateText(deepl_translator, gpt_response, request.data['target_language'])
+
         # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
-        gpt_trans_result=str(gpt_trans_result)
+        gpt_trans_result = str(gpt_trans_result)
         print(f'번역 ChatGPT : {gpt_trans_result}')
+
+        input_gpt_messages.append(
+            {'role': 'assistant', 'content': gpt_response})
         
-        input_gpt_messages.append({'role': 'assistant', 'content': gpt_response})
-        
-        return Response({'status':'200', 'message':'동화를 성공적으로 생성했습니다.', 'original':gpt_response, 'translation':gpt_trans_result}, status=status.HTTP_200_OK)
+        return Response({'status':'201', 'success':'동화를 성공적으로 생성했습니다.', 'script':gpt_trans_result}, status=status.HTTP_201_CREATED)
 
 class RequestImage(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        client = OpenAI(api_key=settings.GPT_API_KEY)
-        original_texts = request.data["original_script"].split('<br><br>')
-        translated_texts = request.data["translated_script"].split('<br><br>')
-        results = []
+        script = request.data.get('script', '')
 
-        @retry_with_exponential_backoff
-        def completions_with_backoff(**kwargs):
-            return client.images.generate(**kwargs)
-        temp_original_text=""
-        temp_translated_text=""
-        story_length=len(original_texts)-1
-        for i,(original_text,translated_text) in enumerate(zip(original_texts,translated_texts)):
-            temp_original_text+=original_text
-            temp_translated_text+=translated_text
-            if i%2==1 or i==story_length:
-                response = completions_with_backoff(
-                    model='dall-e-2',
-                    prompt=f'"{temp_original_text}" in a drawing of fairy tale style',
-                    size='512x512',
-                    quality='standard',
-                    n=1,
-                )
+        try:
+            # deepl 모델 로드
+            deepl_translator = loadDeeplModel()
+            # Deepl을 사용하여 텍스트 번역
+            trans_script = translateText(deepl_translator, script)
+        except ValueError as e:
+            self.logger.exception(f'DeePl) Translation Error: {str(e)}')
+            return Response({'status': '400', 'error': '번역에 실패했습니다. 내용을 수정해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
 
-                print(response)
-                temp_dict = {'text': temp_translated_text}
+        # 사용자가 요청한 티켓 타입 추출
+        ticket_type = request.data.get('ticket', '')
 
-                if isinstance(response.data, list) and len(response.data) > 0:
-                    temp_dict['image_url'] = response.data[0].url
-                else:
-                    temp_dict['image_url'] = 'Error or default image URL'
+        try:
+            # 사용자의 티켓 정보 조회
+            user_tickets = Ticket.objects.get(ticket_owner=request.user)
 
-                results.append(temp_dict)
-                temp_original_text=""
-                temp_translated_text=""
+            # 티켓 타입에 따라 이미지 생성 및 티켓 차감
+            if ticket_type == 'golden_ticket' and user_tickets.golden_ticket > 0:
+                image_url = generate_images_from_text(trans_script, 'dall-e-3', 'hd', user_tickets)
+                user_tickets.golden_ticket -= 1
+            elif ticket_type == 'silver_ticket' and user_tickets.silver_ticket > 0:
+                image_url = generate_images_from_text(trans_script, 'dall-e-3', 'standard', user_tickets)
+                user_tickets.silver_ticket -= 1
+            elif ticket_type == 'pink_ticket' and user_tickets.pink_ticket > 0:
+                image_url = generate_images_from_text(trans_script, 'dall-e-2', 'standard', user_tickets)
+                user_tickets.pink_ticket -= 1
+            else:
+                return Response({'status': '402', 'error': f'{ticket_type}이 부족합니다.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
-        return Response({'status': '201', 'results': results}, status=status.HTTP_201_CREATED)
+            # 티켓 차감 및 변경된 정보 저장
+            user_tickets.save()
+            return Response({'status': '201', 'image_url': image_url}, status=status.HTTP_201_CREATED)
+        
+        # OpenAI RateLimitError 처리
+        except openai.RateLimitError as e:
+            error_message = '연속된 요청으로 이미지 생성 중 예상치 못한 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+            logging.exception(f'DALL-E) Rate Limit Error: {str(e)}')
+            return Response({'status':'429', 'error':error_message}, status.HTTP_429_TOO_MANY_REQUESTS)
 
+        # OpenAI BadRequestError 처리
+        except openai.BadRequestError as e:
+            error_message = '정책상의 이유로 이미지 생성이 불가능합니다. 내용을 수정해주세요.'
+            logging.exception(f'DALL-E) Bad Request Error: {str(e)}')
+            return Response({'status':'400', 'error':error_message}, status.HTTP_400_BAD_REQUEST)
+
+        # 그 외 예외 처리 및 로깅
+        except Exception as e:
+            error_message = '죄송합니다. 서버에서 오류가 발생했습니다. 문제가 지속되면 관리자에게 문의해주세요.'
+            logging.exception(f'DALL-E) Unexpected Error: {str(e)}')
+            return Response({'status':'500', 'error':error_message}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class StorySortedByLikeView(APIView):
     def get(self, request):
         """
         모든 게시물을 좋아요 순으로 8개만 Response 합니다.
         """        
-        stories = Story.objects.exclude(hate_count__gt=5).order_by('-like_count', '-created_at')[:8] # 좋아요 많은 / 최신순
+        stories = Story.objects.exclude(hate_count__gt=4).order_by('-like_count', '-created_at')[:8] # 좋아요 많은 / 최신순
         serializer = StoryListSerializer(stories, many=True)
         return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
         
@@ -173,7 +146,7 @@ class StorySortedByCountryView(APIView):
         """
         국가별 게시물을 Response 합니다.
         """
-        stories = Story.objects.filter(hate_count__lte=5, author__country=author_country).order_by('-like_count', '-created_at')[:8] # 국가별 / 좋아요 많은 / 최신순
+        stories = Story.objects.filter(hate_count__lte=4, author__country=author_country).order_by('-like_count', '-created_at')[:8] # 국가별 / 좋아요 많은 / 최신순
         serializer = StoryListSerializer(stories, many=True)
         return Response({'status': '200', 'story_list': serializer.data}, status=status.HTTP_200_OK)
 
@@ -188,7 +161,7 @@ class StoryView(APIView):
         per_page = settings.REST_FRAMEWORK['PAGE_SIZE']
         
         if story_id is None:
-            stories = Story.objects.exclude(hate_count__gt=5).order_by('-created_at') # 최신순
+            stories = Story.objects.exclude(hate_count__gt=4).order_by('-created_at') # 최신순
             paginator = Paginator(stories, per_page)
             try:
                 stories_page = paginator.page(page)
@@ -212,7 +185,7 @@ class StoryView(APIView):
                 serializer = StorySerializer(story)
                 return Response({'status':'200', 'detail':serializer.data}, status=status.HTTP_200_OK)
             else:
-                return Response({'status':'403', 'error':"관리자만 열람 가능한 스토리입니다."}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'status':'403', 'error':'관리자만 열람 가능한 스토리입니다.'}, status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
@@ -243,7 +216,7 @@ class StoryView(APIView):
             return Response({'status':'201', 'success':'동화가 작성되었습니다.', 'story_id':story_id}, status=status.HTTP_201_CREATED)
         else:
             print(serializer.errors)
-            return Response({'status':'400', 'error':'동화 작성에 실패했습니다'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, story_id):
         """작성된 게시글(동화)을 삭제하는 기능입니다."""
@@ -393,15 +366,15 @@ class StoryTranslation(APIView):
         
             # 제목 번역
             trans_title_result = translator.translate_text(
-                request.data["story_title"], target_lang=deepl_target_lang)
+                request.data['story_title'], target_lang=deepl_target_lang)
             trans_title_str_result = str(trans_title_result)
             
             translated_scripts = []
             
             # 스크립트 번역
-            for script in request.data["story_script"] :
+            for script in request.data['story_script'] :
                 trans_script_result = translator.translate_text(
-                script["paragraph"], target_lang=deepl_target_lang)
+                script['paragraph'], target_lang=deepl_target_lang)
 
                 # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
                 trans_script_str_result = str(trans_script_result)
