@@ -151,7 +151,7 @@ class KakaoLoginView(APIView):
             "email" : email,
             "password" : "aaaa1111~",
             "nickname" : nickname,
-            "country" : "대한민국"
+            "country" : ""
         }
 
         try:
@@ -234,7 +234,7 @@ class NaverLoginView(APIView):
             "email" : email,
             "password" : "aaaa1111~",
             "nickname" : nickname,
-            "country" : "대한민국"
+            "country" : ""
         }
 
         try:
@@ -314,7 +314,7 @@ class GoogleLoginView(APIView):
             "email" : email,
             "password" : "aaaa1111~",
             "nickname" : nickname,
-            "country" : "대한민국"
+            "country" : ""
         }
         try:
             user = User.objects.get(email=email)
