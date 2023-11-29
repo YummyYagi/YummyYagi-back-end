@@ -76,22 +76,6 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
 
-class SocialRegisterView(APIView):
-    """사용자 정보를 받아 회원가입 합니다."""
-    def post(self, request):
-        if request.data['password'] != request.data['password_check']:
-            return Response({'status':'400', 'error':'비밀번호를 확인해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                user=serializer.save()
-                
-                # 회원가입 시 기본 티켓 제공
-                user_ticket = Ticket.objects.create(ticket_owner=user)
-                
-                return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
-            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-   
     
 KAKAO_BASE_URL = "http://127.0.0.1:5501/"
 GOOGLE_BASE_URL = "http://127.0.0.1:5501/"
