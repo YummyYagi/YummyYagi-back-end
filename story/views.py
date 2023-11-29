@@ -375,8 +375,6 @@ class CommentView(APIView):
 class KakaoShareView(APIView):
     """카카오 API 키를 제공하는 뷰입니다."""
     
-    permission_classes = [IsAuthenticated]
-    
     def get(self, request):
         kakao_api_key = settings.KAKAO_API_KEY
         return Response({'status':'200', 'kakao_api_key':kakao_api_key})
