@@ -213,34 +213,37 @@ class StoryView(APIView):
 
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
-        serializer = StoryCreateSerializer(data=request.data)
+        
+        paragraph_list = request.data['paragraph_list']
+        image_url_list = request.data['image_url_list']
 
-        if serializer.is_valid():
-            story = serializer.save(author = request.user)
+        image_file_list = []
 
-            story_id=story.id
-            paragraph_list = request.data['paragraph_list']
-            image_url_list = request.data['image_url_list']
+        for image_url in image_url_list:
+            response = requests.get(image_url)
+            if response.status_code == 200:
+                image_content = ContentFile(response.content)
+                image_content.name = 'story_image.jpg'
+                image_file_list.append(image_content)
 
-            image_file_list = []
-            for image_url in image_url_list:
-                response = requests.get(image_url)
-                if response.status_code == 200:
-                    image_content = ContentFile(response.content)
-                    image_content.name = 'story_image.jpg'
-                    image_file_list.append(image_content)
+        content_data = []
+        
+        for i in range(len(paragraph_list)):
+            content_dic = {'paragraph':paragraph_list[i], 'image':image_file_list[i]}
+            content_data.append(content_dic)
 
-            for i in range(len(paragraph_list)):
-                content_data = {'paragraph':paragraph_list[i], 'image':image_file_list[i]}
-                content_serializer = ContentCreateSerializer(data=content_data)
-                if content_serializer.is_valid():
-                    content_serializer.save(story=story)
-                else:
-                    return Response({'status':'400', 'error':'동화 페이지 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        content_serializer = ContentCreateSerializer(data=content_data, many=True)
+        if content_serializer.is_valid():
+            story_serializer = StoryCreateSerializer(data=request.data)
+            if story_serializer.is_valid():
+                story = story_serializer.save(author = request.user)
+                content_serializer.save(story=story)
+                story_id=story.id
+            else:
+                return Response({'status':'400', 'error':'동화책 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
             return Response({'status':'201', 'success':'동화가 작성되었습니다.', 'story_id':story_id}, status=status.HTTP_201_CREATED)
         else:
-            print(serializer.errors)
-            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status':'400', 'error':'동화 페이지 작성에 실패했습니다.'}, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, story_id):
         """작성된 게시글(동화)을 삭제하는 기능입니다."""

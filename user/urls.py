@@ -6,7 +6,6 @@ urlpatterns = [
     path('verify-email/<str:uidb64>/<str:token>/', views.VerifyEmailView.as_view(), name='verify_email_view'),
     path('login/', views.LoginView.as_view(), name='login_view'),
     
-    path('social-register/', views.SocialRegisterView.as_view(), name='social_register_view'),
     path('social/', views.SocialUrlView.as_view(), name='social_login'),
     path('kakao/', views.KakaoLoginView.as_view(), name='kakao_login'),
     path('google/', views.GoogleLoginView.as_view(), name='google_login'),
