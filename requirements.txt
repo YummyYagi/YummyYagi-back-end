@@ -12,9 +12,11 @@ click-didyoumean==0.3.0
 click-plugins==1.1.1
 click-repl==0.3.0
 colorama==0.4.6
+cron-descriptor==1.4.0
 deepl==1.16.1
 distro==1.8.0
 Django==4.2.7
+django-celery-beat==2.5.0
 django-celery-results==2.5.1
 django-cors-headers==4.3.1
 django-environ==0.11.2
@@ -49,6 +51,7 @@ pydantic==2.5.1
 pydantic_core==2.14.3
 PyJWT==2.8.0
 pyparsing==3.1.1
+python-crontab==3.0.0
 python-dateutil==2.8.2
 pytz==2023.3.post1
 requests==2.31.0
