@@ -65,5 +65,8 @@ class Comment(models.Model):
     story = models.ForeignKey(Story, verbose_name='스토리', on_delete=models.CASCADE)
     content = models.TextField('댓글 내용')
     
+    def __str__(self):
+        return self.content
+
     class Meta:
         db_table = 'comment'
