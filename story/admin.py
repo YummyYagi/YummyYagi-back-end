@@ -20,8 +20,20 @@ class HateCountFilter(admin.SimpleListFilter):
 class StoryAdmin(admin.ModelAdmin):
     
     list_display = ('id', 'title', 'author', 'hate_count')
-    list_per_page = 50
+    list_per_page = 20
     list_filter = (HateCountFilter,)
 
-admin.site.register(Content)
-admin.site.register(Comment)
+@admin.register(Content)
+class ContentAdmin(admin.ModelAdmin):
+    
+    def divided_paragraph(self, obj):
+        return obj.paragraph[:80]
+    
+    list_display = ('id', 'story', 'divided_paragraph')
+    list_per_page = 20
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    
+    list_display = ('id', 'content', 'author', 'story')
+    list_per_page = 20
