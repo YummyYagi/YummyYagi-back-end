@@ -95,7 +95,7 @@ class SocialRegisterView(APIView):
     
 KAKAO_BASE_URL = "https://www.yummyyagi.com"
 GOOGLE_BASE_URL = "https://www.yummyyagi.com"
-NAVER_BASE_URL = "https://www.yummyyagi.com"
+NAVER_BASE_URL = "https://www.yummyyagi.com/"
 
 STATE = secrets.token_urlsafe(16)
 
