@@ -46,7 +46,7 @@ class RegisterView(APIView):
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
 
                 # 이메일에 인증 링크 포함하여 보내기
-                verification_url = f'http://localhost/user/verify-email/{uid}/{token}/'
+                verification_url = f'https://api.yummyyagi.com/user/verify-email/{uid}/{token}/'
                 
                 send_verification_email.delay(user.id, verification_url, user.email)
                 
@@ -63,7 +63,7 @@ class VerifyEmailView(APIView):
         if default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-        url = "http://127.0.0.1:5501/user/login.html"
+        url = "https://www.yummyyagi.com/user/login.html"
         return redirect(url)
 
 
@@ -93,9 +93,9 @@ class SocialRegisterView(APIView):
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
    
     
-KAKAO_BASE_URL = "http://127.0.0.1:5501/"
-GOOGLE_BASE_URL = "http://127.0.0.1:5501/"
-NAVER_BASE_URL = "http://127.0.0.1:5501/"
+KAKAO_BASE_URL = "https://www.yummyyagi.com"
+GOOGLE_BASE_URL = "https://www.yummyyagi.com"
+NAVER_BASE_URL = "https://www.yummyyagi.com"
 
 STATE = secrets.token_urlsafe(16)
 
@@ -444,7 +444,7 @@ class PasswordResetView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         
         # 이메일에 인증 링크 포함하여 보내기
-        verification_url = f'http://localhost/user/verify-email-for-pw/{uid}/{token}/'
+        verification_url = f'https://api.yummyyagi.com/user/verify-email-for-pw/{uid}/{token}/'
         send_verification_email_for_pw.delay(user.id, verification_url, user.email)
         
         return Response({'status': '200', 'success': '임시 비밀번호 발급을 위한 인증 이메일이 전송되었습니다.'}, status=status.HTTP_200_OK)
