@@ -76,7 +76,7 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
 
-BASE_URL = "http://127.0.0.1:5501/"
+BASE_URL = "https://www.yummyyagi.com/"
 STATE = secrets.token_urlsafe(16)
 
 
