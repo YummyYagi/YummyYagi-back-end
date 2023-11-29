@@ -91,8 +91,7 @@ class SocialRegisterView(APIView):
                 
                 return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
             return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-   
-    
+
 KAKAO_BASE_URL = "https://www.yummyyagi.com"
 GOOGLE_BASE_URL = "https://www.yummyyagi.com"
 NAVER_BASE_URL = "https://www.yummyyagi.com/"
