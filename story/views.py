@@ -13,7 +13,7 @@ import deepl
 import openai
 
 from story.models import Story, Comment
-from user.models import UserStoryTimeStamp, Ticket
+from user.models import User, UserStoryTimeStamp, Ticket
 from story.serializers import StoryListSerializer, StorySerializer, CommentSerializer, CommentCreateSerializer, StoryCreateSerializer, ContentCreateSerializer
 from story.permissions import IsAuthenticated
 
@@ -214,25 +214,39 @@ class StoryView(APIView):
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
         
+        user = User.objects.get(user=request.user)
+        if not user.is_authenticated:
+            return Response({'status':'401', 'error':'로그인 후 이용해주세요.'}, status=status.HTTP_401_UNAUTHORIZED)
+
         paragraph_list = request.data['paragraph_list']
         image_url_list = request.data['image_url_list']
 
         image_file_list = []
 
         for image_url in image_url_list:
-            response = requests.get(image_url)
-            if response.status_code == 200:
-                image_content = ContentFile(response.content)
-                image_content.name = 'story_image.jpg'
-                image_file_list.append(image_content)
+            if image_url == 'None':
+                image_file_list.append(None)
+            else:
+                response = requests.get(image_url)
+                if response.status_code == 200:
+                    image_content = ContentFile(response.content)
+                    image_content.name = 'story_image.jpg'
+                    image_file_list.append(image_content)
+                else:
+                    image_file_list.append('http://127.0.0.1:8000/media/story/404_not_found.png')
 
         content_data = []
-        
-        for i in range(len(paragraph_list)):
-            content_dic = {'paragraph':paragraph_list[i], 'image':image_file_list[i]}
-            content_data.append(content_dic)
 
-        content_serializer = ContentCreateSerializer(data=content_data, many=True)
+        for i in range(len(paragraph_list)):
+            if image_file_list[i] == None:
+                content_dic = {'paragraph': paragraph_list[i]}
+                content_data.append(content_dic)
+            else:
+                content_dic = {'paragraph': paragraph_list[i], 'image': image_file_list[i]}
+                content_data.append(content_dic)
+
+        content_serializer = ContentCreateSerializer(data=content_data, partial=True, many=True)
+
         if content_serializer.is_valid():
             story_serializer = StoryCreateSerializer(data=request.data)
             if story_serializer.is_valid():
