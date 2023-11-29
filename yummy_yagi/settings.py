@@ -22,7 +22,7 @@ KAKAO_API_KEY = env('KAKAO_API_KEY')
 
 PG_CID = env('PG_CID')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['backend']
 
 
 INSTALLED_APPS = [
@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'user',
     'story',
     
-    'django_celery_results',
     'django_celery_results',
 ]
 
@@ -103,7 +102,7 @@ else:
             'NAME':BASE_DIR/'db.sqlite3',
         }
     }
-CORS_ORIGIN_WHITELIST=['https://127.0.0.1:8000',]
+CORS_ORIGIN_WHITELIST=['http://localhost','http://127.0.0.1:5501',]
 CSRF_TRUSTED_ORIGINS=CORS_ORIGIN_WHITELIST
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -151,7 +150,7 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = env('EMAIL_USE_TLS')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-CELERY_BROKER_URL = 'amqp://guest@localhost:5672//'
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
 
 CELERY_TIMEZONE = 'Asia/Seoul'
 CELERY_RESULT_BACKEND = 'django-db'
@@ -220,4 +219,3 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
 
-CORS_ALLOW_ALL_ORIGINS = True

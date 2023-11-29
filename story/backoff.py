@@ -1,9 +1,7 @@
 import random
 import time
 import openai
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
+
 
 def retry_with_exponential_backoff(
     func,
@@ -42,28 +40,6 @@ def retry_with_exponential_backoff(
 
                 # Sleep for the delay
                 time.sleep(delay)
-            
-            except openai.BadRequestError as e:
-                
-                print(e)
-                cur_kwargs=kwargs
-                cur_prompt=cur_kwargs['prompt']
-                
-                n_gram_range = (2, 2)
-                stop_words = "english"
-                count = CountVectorizer(ngram_range=n_gram_range, stop_words=stop_words).fit([cur_prompt])
-                candidates = count.get_feature_names_out()
-
-                model = SentenceTransformer('distilbert-base-nli-mean-tokens')
-                doc_embedding = model.encode([cur_prompt])
-                candidate_embeddings = model.encode(candidates)
-                top_n = 1
-                distances = cosine_similarity(doc_embedding, candidate_embeddings)
-                keywords = [candidates[index] for index in distances.argsort()[0][-top_n:]]
-                print(keywords)
-                cur_kwargs['prompt']=f'"{keywords}" in a drawing style of fairy tale'
-                
-                return func(*args, **cur_kwargs)
 
             # Raise exceptions for any errors not specified
             except Exception as e:
