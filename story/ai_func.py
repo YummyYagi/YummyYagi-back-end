@@ -77,7 +77,7 @@ def runGPT(openAI_client, chatGPT_model, input_gpt_messages):
     print(f'ChatGPT : {gpt_response}')
     return gpt_response
 
-
+@retry_with_exponential_backoff
 def generate_images_from_text(script, d_model, quality, user_tickets):
 
     client = OpenAI(api_key=settings.GPT_API_KEY)
