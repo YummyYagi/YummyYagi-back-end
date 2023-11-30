@@ -19,6 +19,7 @@ urlpatterns = [
     
     path('verify-email-for-pw/<str:uidb64>/<str:token>/', views.SendRandomPassword.as_view(), name='send_random_password_view'),
 
+    path('usertickets/', views.UserTicketsView.as_view(), name='user_tickets'),
     path('payment-page/', views.PaymentPageView.as_view(), name='payment_page_view'),
     path('payment-result/', views.PaymentResult.as_view(), name='payment_result_view'),
 ]

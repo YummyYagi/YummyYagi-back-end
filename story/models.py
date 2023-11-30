@@ -46,7 +46,7 @@ class Content(models.Model):
     """
     story = models.ForeignKey(Story, verbose_name='스토리', on_delete=models.CASCADE, related_name="contents")
     paragraph = models.TextField('문단')
-    image = models.ImageField('문단 이미지', upload_to=story_image_upload_path)
+    image = models.ImageField('문단 이미지', upload_to=story_image_upload_path, blank=True)
     
     class Meta:
         db_table = 'content'
@@ -65,5 +65,8 @@ class Comment(models.Model):
     story = models.ForeignKey(Story, verbose_name='스토리', on_delete=models.CASCADE)
     content = models.TextField('댓글 내용')
     
+    def __str__(self):
+        return self.content
+
     class Meta:
         db_table = 'comment'

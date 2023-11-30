@@ -524,3 +524,26 @@ class PaymentResult(APIView):
                 return Response({'status': '400', 'error': '유효하지 않은 데이터입니다.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'status': '403', 'error': '인증된 사용자의 정보와 일치하지 않습니다.'}, status=status.HTTP_403_FORBIDDEN)
+
+
+class UserTicketsView(APIView):
+    def get(self, request):
+        user = request.user
+
+        if not user.is_authenticated:
+            return Response({'error': '인증되지 않은 사용자'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            user_tickets = Ticket.objects.get(ticket_owner=user)
+            golden_ticket_count = user_tickets.golden_ticket
+            silver_ticket_count = user_tickets.silver_ticket
+            pink_ticket_count = user_tickets.pink_ticket
+
+            return Response({
+                'status': '200',
+                'golden_ticket_count': golden_ticket_count,
+                'silver_ticket_count': silver_ticket_count,
+                'pink_ticket_count': pink_ticket_count,
+            }, status=status.HTTP_200_OK)
+        except: 
+            return Response({'error': '사용자의 티켓 정보를 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)

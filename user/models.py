@@ -125,6 +125,9 @@ class Ticket(models.Model):
     silver_ticket = models.PositiveIntegerField('실버 티켓', default=2)
     pink_ticket = models.PositiveBigIntegerField('핑크 티켓', default=10)
 
+    class Meta:
+        db_table = 'ticket'
+
 
 class PaymentResult(models.Model):
     """
@@ -155,6 +158,10 @@ class PaymentResult(models.Model):
     card_number = models.CharField('카드 번호', max_length=50, null=True, blank=True)
     receipt_url = models.URLField('영수증 url', null=True, blank=True)
     status = models.CharField('처리 상태', max_length=30)
+
+    class Meta:
+        db_table = 'payment result'
+
 
 class Claim(models.Model):
     """

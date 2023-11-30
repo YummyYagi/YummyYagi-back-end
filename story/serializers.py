@@ -54,7 +54,7 @@ class StoryListSerializer(serializers.ModelSerializer):
     author_nickname = serializers.CharField(source='author.nickname')
     author_country = serializers.CharField(source='author.country')
     story_title = serializers.CharField(source='title')
-    content = serializers.SerializerMethodField(method_name='get_first_content')
+    content = serializers.SerializerMethodField(method_name='get_content')
     like_user_list = serializers.SerializerMethodField()
     
     def get_like_user_list(self, story):
@@ -62,13 +62,15 @@ class StoryListSerializer(serializers.ModelSerializer):
             user_data = UserIdSerializer(users, many=True).data
             return user_data
         
-    def get_first_content(self, obj):
-        first_content = obj.contents.first()
-        if first_content:
-            return {
-                'story_first_paragraph': first_content.paragraph,
-                'story_image': first_content.image.url,
-            }
+    def get_content(self, obj):
+        contents_qs = obj.contents.all()
+
+        for content_obj in contents_qs:
+            if content_obj.image:
+                return {
+                    'story_paragraph': content_obj.paragraph,
+                    'story_image': content_obj.image.url,
+                }
 
     class Meta:
         model = Story
