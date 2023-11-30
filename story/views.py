@@ -214,7 +214,7 @@ class StoryView(APIView):
     def post(self, request):
         """게시글(동화) 작성 페이지입니다."""
         
-        user = User.objects.get(user=request.user)
+        user = User.objects.get(id=request.user.id)
         if not user.is_authenticated:
             return Response({'status':'401', 'error':'로그인 후 이용해주세요.'}, status=status.HTTP_401_UNAUTHORIZED)
 
