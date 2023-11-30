@@ -76,27 +76,9 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
 
-class SocialRegisterView(APIView):
-    """사용자 정보를 받아 회원가입 합니다."""
-    def post(self, request):
-        if request.data['password'] != request.data['password_check']:
-            return Response({'status':'400', 'error':'비밀번호를 확인해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                user=serializer.save()
-                
-                # 회원가입 시 기본 티켓 제공
-                user_ticket = Ticket.objects.create(ticket_owner=user)
-                
-                return Response({'status':'201', 'success':'회원가입 성공'}, status=status.HTTP_201_CREATED)
-            return Response({'status':'400', 'error':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-KAKAO_BASE_URL = "https://www.yummyyagi.com"
-GOOGLE_BASE_URL = "https://www.yummyyagi.com"
-NAVER_BASE_URL = "https://www.yummyyagi.com/"
-
+BASE_URL = "https://www.yummyyagi.com/"
 STATE = secrets.token_urlsafe(16)
+
 
 class SocialUrlView(APIView):
     def post(self,request):
@@ -104,15 +86,15 @@ class SocialUrlView(APIView):
         if social is None:
             return Response({'error':'소셜로그인이 아닙니다'},status=status.HTTP_400_BAD_REQUEST)
         elif social == 'kakao':
-            url = 'https://kauth.kakao.com/oauth/authorize?client_id=' + settings.KAKAO_REST_API_KEY + '&redirect_uri=' + KAKAO_BASE_URL + '&response_type=code&prompt=login'
+            url = 'https://kauth.kakao.com/oauth/authorize?client_id=' + settings.KAKAO_REST_API_KEY + '&redirect_uri=' + BASE_URL + '&response_type=code&prompt=login'
             return Response({'url':url},status=status.HTTP_200_OK)
         elif social == 'google':
             client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-            redirect_uri = GOOGLE_BASE_URL 
+            redirect_uri = BASE_URL 
             url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=email%20profile"
             return Response({'url': url}, status=status.HTTP_200_OK)
         elif social == 'naver':
-            url = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id="+ settings.SOCIAL_AUTH_NAVER_CLIENT_ID + "&redirect_uri=" + NAVER_BASE_URL + "&state=" + STATE
+            url = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id="+ settings.SOCIAL_AUTH_NAVER_CLIENT_ID + "&redirect_uri=" + BASE_URL + "&state=" + STATE
             return Response({'url':url},status=status.HTTP_200_OK) 
 
 
@@ -124,7 +106,7 @@ class KakaoLoginView(APIView):
             data={
                 "grant_type":"authorization_code",
                 "client_id": settings.KAKAO_REST_API_KEY,
-                "redirect_uri":KAKAO_BASE_URL,
+                "redirect_uri":BASE_URL,
                 "code":code,
                 'client_secret': settings.KAKAO_SECRET_KEY,
             },
@@ -194,7 +176,7 @@ class NaverLoginView(APIView):
         code = request.data.get('code')
         client_id = settings.SOCIAL_AUTH_NAVER_CLIENT_ID
         client_secret = settings.SOCIAL_AUTH_NAVER_SECRET
-        redirect_uri = NAVER_BASE_URL
+        redirect_uri = BASE_URL
         
         # 네이버 API로 액세스 토큰 요청
         access_token_request = requests.post("https://nid.naver.com/oauth2.0/token",
@@ -277,7 +259,7 @@ class GoogleLoginView(APIView):
 
         client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
         client_secret = settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
-        redirect_uri = GOOGLE_BASE_URL
+        redirect_uri = BASE_URL
 
         #  구글 API로 액세스 토큰 요청
         access_token_request = requests.post("https://oauth2.googleapis.com/token",
@@ -542,3 +524,26 @@ class PaymentResult(APIView):
                 return Response({'status': '400', 'error': '유효하지 않은 데이터입니다.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'status': '403', 'error': '인증된 사용자의 정보와 일치하지 않습니다.'}, status=status.HTTP_403_FORBIDDEN)
+
+
+class UserTicketsView(APIView):
+    def get(self, request):
+        user = request.user
+
+        if not user.is_authenticated:
+            return Response({'error': '인증되지 않은 사용자'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            user_tickets = Ticket.objects.get(ticket_owner=user)
+            golden_ticket_count = user_tickets.golden_ticket
+            silver_ticket_count = user_tickets.silver_ticket
+            pink_ticket_count = user_tickets.pink_ticket
+
+            return Response({
+                'status': '200',
+                'golden_ticket_count': golden_ticket_count,
+                'silver_ticket_count': silver_ticket_count,
+                'pink_ticket_count': pink_ticket_count,
+            }, status=status.HTTP_200_OK)
+        except: 
+            return Response({'error': '사용자의 티켓 정보를 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)

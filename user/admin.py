@@ -86,7 +86,22 @@ class UserAdmin(BaseUserAdmin):
 
 
 admin.site.register(User, UserAdmin)
-admin.site.register(Ticket)
-admin.site.register(Claim)
-admin.site.register(PaymentResult)
 admin.site.unregister(Group)
+
+@admin.register(Ticket)
+class TicketAdmin(admin.ModelAdmin):
+    
+    list_display = ('id', 'ticket_owner', 'golden_ticket', 'silver_ticket', 'pink_ticket')
+    list_per_page = 20
+    
+@admin.register(PaymentResult)
+class PaymentResultAdmin(admin.ModelAdmin):
+    
+    list_display = ('id', 'buyer_email', 'buyer_name', 'name', 'paid_amount', 'currency', 'pg_provider', 'status')
+    list_per_page = 20
+
+@admin.register(Claim)
+class ClaimAdmin(admin.ModelAdmin):
+    
+    list_display = ('id', 'author', 'content')
+    list_per_page = 20

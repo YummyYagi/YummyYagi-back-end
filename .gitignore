@@ -14,6 +14,7 @@ db.sqlite3-journal
 media/story/*
 media/user/*
 # media 폴더 내부의 default_profile.png 파일 포함
+!media/story/404_not_found.png
 !media/user/default_profile.jpg
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
