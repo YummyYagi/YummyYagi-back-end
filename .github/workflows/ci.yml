@@ -1,0 +1,15 @@
+name : Run tests
+on: push
+jobs:
+  execute_tests:
+    name: Install requirements and execute tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update
+        run: sudo apt update
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Execute tests
+        env: 
+          DJANGO_SETTINGS_MODULE: mysite.settings
+        run: pytest

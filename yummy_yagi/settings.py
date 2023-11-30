@@ -102,7 +102,7 @@ else:
             'NAME':BASE_DIR/'db.sqlite3',
         }
     }
-CORS_ORIGIN_WHITELIST=['https://api.yummyyagi.com','https://www.yummyyagi.com',]
+CORS_ORIGIN_WHITELIST=['http://localhost','http://127.0.0.1:5501',]
 CSRF_TRUSTED_ORIGINS=CORS_ORIGIN_WHITELIST
 AUTH_PASSWORD_VALIDATORS = [
     {
