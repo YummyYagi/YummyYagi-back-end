@@ -20,6 +20,7 @@ from user.models import User, Ticket, PaymentResult as PaymentResultModel
 from user.permissions import IsAuthenticatedOrIsOwner, IsAuthenticated
 from user.serializers import UserSerializer, LoginSerializer, UserInfoSerializer, QnaSerializer, MypageSerializer, PasswordSerializer, PaymentResultSerializer
 from .tasks import send_verification_email, send_verification_email_for_pw, send_email_with_pw
+from story.models import Story
 import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import redirect
@@ -391,6 +392,11 @@ class UserInfoView(APIView):
         
         auth_user = authenticate(email=request.user.email, password=password)
         if auth_user:
+            stories_to_update = Story.objects.filter(like=request.user)
+            for story in stories_to_update:
+                story.like_count -= 1
+                story.save()
+
             auth_user.delete()
             return Response({'status': '204', 'success': '회원 탈퇴가 완료되었습니다.'})
         else:
