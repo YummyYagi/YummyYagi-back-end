@@ -233,7 +233,7 @@ class StoryView(APIView):
                     image_content.name = 'story_image.jpg'
                     image_file_list.append(image_content)
                 else:
-                    image_file_list.append('http://127.0.0.1:8000/media/story/404_not_found.png')
+                    image_file_list.append('https://api.yummyyagi.com/media/story/404_not_found.png')
 
         content_data = []
 
