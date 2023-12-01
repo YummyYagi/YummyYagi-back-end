@@ -32,8 +32,8 @@ from .ai_func import (
     setup_gpt_messages,
 )
 
-logging.basicConfig(filename='info.log', level=logging.INFO)
-info_logger = logging.getLogger('info_logger')
+logging.basicConfig(filename="info.log", level=logging.INFO)
+info_logger = logging.getLogger("info_logger")
 error_logger = logging.getLogger("error_logger")
 
 
@@ -45,8 +45,8 @@ class RequestFairytail(APIView):
         pers_client = load_pers_model()
 
         # User에게 질문 받기
-        user_input_message = request.data["subject"]
-        print(request.data["subject"])
+        user_input_message = request.data.get("subject", "")
+        print(request.data.get("subject", ""))
 
         # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
         trans_result = translate_text(deepl_translator, user_input_message)
@@ -86,12 +86,12 @@ class RequestFairytail(APIView):
             )
 
         # 사용자가 선택한 언어가 영어일 경우 번역 없이 반환
-        if request.data["target_language"] == "EN-US":
+        if request.data.get("target_language", "") == "EN-US":
             gpt_trans_result = gpt_response
         else:
             # 사용자가 선택한 언어로 GPT 답변 내용 번역
             gpt_trans_result = translate_text(
-                deepl_translator, gpt_response, request.data["target_language"]
+                deepl_translator, gpt_response, request.data.get("target_language", "")
             )
 
         # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
@@ -243,8 +243,8 @@ class StoryView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         start_time = time.time()
-        paragraph_list = request.data["paragraph_list"]
-        image_url_list = request.data["image_url_list"]
+        paragraph_list = request.data.get("paragraph_list", "")
+        image_url_list = request.data.get("image_url_list", "")
 
         image_file_list = []
 
@@ -484,19 +484,19 @@ class StoryTranslation(APIView):
         try:
             # deepl 모델 로드
             deepl_translator = load_deepl_model()
-            deepl_target_lang = request.data["target_language"]
+            deepl_target_lang = request.data.get("target_language", "")
 
             # 제목 번역
             trans_title_result = deepl_translator.translate_text(
-                request.data["story_title"], target_lang=deepl_target_lang
+                request.data.get("story_title", ""), target_lang=deepl_target_lang
             )
-            
+
             trans_title_str_result = str(trans_title_result)
 
             translated_scripts = []
 
             # 스크립트 번역
-            for script in request.data["story_script"]:
+            for script in request.data.get("story_script", ""):
                 trans_script_result = deepl_translator.translate_text(
                     script["paragraph"], target_lang=deepl_target_lang
                 )
