@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, True))
 
 environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
-
+DEBUG = os.environ.get("DEBUG", "")
 SECRET_KEY = env("SECRET_KEY")
 ALLOWED_HOSTS = ["backend"]
 
