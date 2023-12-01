@@ -296,7 +296,7 @@ class StoryView(APIView):
         else:
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
-            self.user_viewed(now(), story)
+            self.user_viewed(story)
 
             if story.hate_count < 5:
                 serializer = StorySerializer(story)
@@ -336,7 +336,7 @@ class StoryView(APIView):
                     image_file_list.append(image_content)
                 else:
                     image_file_list.append(
-                        "http://127.0.0.1:8000/media/story/404_not_found.png"
+                        f"{settings.BE_URL}/media/story/404_not_found.png"
                     )
 
         content_data = []
@@ -399,12 +399,11 @@ class StoryView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-    def user_viewed(self, timestamp, story):
+    def user_viewed(self, story):
         user = self.request.user
         if not user.is_authenticated:
             return
         ust, _ = UserStoryTimeStamp.objects.get_or_create(user=user, story=story)
-        ust.timestamp = timestamp
         ust.save()
         return ust.timestamp
 
@@ -522,7 +521,7 @@ class CommentView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-    def delete(self, request, story_id, comment_id):
+    def delete(self, request, comment_id):
         """댓글을 삭제합니다."""
         if request.user.is_authenticated:
             comment = get_object_or_404(Comment, id=comment_id)

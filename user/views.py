@@ -61,9 +61,7 @@ class RegisterView(APIView):
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
 
                 # 이메일에 인증 링크 포함하여 보내기
-                verification_url = (
-                    f"http://127.0.0.1:8000/user/verify-email/{uid}/{token}/"
-                )
+                verification_url = f"{settings.BE_URL}/user/verify-email/{uid}/{token}/"
 
                 send_verification_email.delay(user.id, verification_url, user.email)
 
@@ -87,7 +85,7 @@ class VerifyEmailView(APIView):
         if default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-        url = "http://127.0.0.1:5501/user/login.html"
+        url = f"{settings.FE_URL}/user/login.html"
         return redirect(url)
 
 
@@ -101,7 +99,7 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
 
-BASE_URL = "http://127.0.0.1:5501/"
+BASE_URL = f"{settings.FE_URL}/"
 STATE = secrets.token_urlsafe(16)
 
 
@@ -531,9 +529,7 @@ class PasswordResetView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
         # 이메일에 인증 링크 포함하여 보내기
-        verification_url = (
-            f"http://127.0.0.1:8000/user/verify-email-for-pw/{uid}/{token}/"
-        )
+        verification_url = f"{settings.BE_URL}/user/verify-email-for-pw/{uid}/{token}/"
         send_verification_email_for_pw.delay(user.id, verification_url, user.email)
 
         return Response(

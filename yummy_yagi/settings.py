@@ -20,7 +20,7 @@ KAKAO_API_KEY = env("KAKAO_API_KEY")
 
 PG_CID = env("PG_CID")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["backend"]
 
 
 INSTALLED_APPS = [
@@ -78,18 +78,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "yummy_yagi.wsgi.application"
 
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DB_NAME"),
-        "USER": env("DB_USER"),
-        "PASSWORD": env("DB_PASSWORD"),
-        "HOST": "localhost",
-        "PORT": "5432",
+POSTGRES_DB = os.environ.get("POSTGRES_DB", "")
+if POSTGRES_DB:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": POSTGRES_DB,
+            "USER": os.environ.get("POSTGRES_USER", ""),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+            "HOST": os.environ.get("POSTGRES_HOST", ""),
+            "PORT": os.environ.get("POSTGRES_PORT", ""),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+FE_URL = os.environ.get("FE_URL", "")
+BE_URL = os.environ.get("BE_URL", "")
 
+CORS_ORIGIN_WHITELIST = [
+    FE_URL,
+    BE_URL,
+]
+CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -117,11 +132,11 @@ USE_I18N = True
 
 USE_TZ = False
 
-
+STATIC_ROOT = BASE_DIR / "static"
 STATIC_URL = "static/"
 
 MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_URL = "/media/"
+MEDIA_URL = "media/"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -137,7 +152,7 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = env("EMAIL_USE_TLS")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-CELERY_BROKER_URL = "amqp://guest@localhost:5672//"
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "")
 
 CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_RESULT_BACKEND = "django-db"
@@ -199,5 +214,3 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
-
-CORS_ALLOW_ALL_ORIGINS = True
