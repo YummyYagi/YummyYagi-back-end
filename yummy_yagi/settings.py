@@ -11,7 +11,7 @@ environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = os.environ.get("DEBUG", "")
-
+ALLOWED_HOSTS = ["backend"]
 GPT_API_KEY = os.environ.get("GPT_DALLE_API_KEY", "")
 DEEPL_AUTH_KEY = os.environ.get("DEEPL_AUTH_KEY", "")
 PRES_API_KEY = os.environ.get("PRES_API_KEY", "")
@@ -144,18 +144,16 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 FE_URL = os.environ.get("FE_URL", "")
 BE_URL = os.environ.get("BE_URL", "")
 
-if DEBUG == False :
+if DEBUG == False:
     CORS_ORIGIN_WHITELIST = [
         FE_URL,
         BE_URL,
     ]
 
     CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
-    ALLOWED_HOSTS = ["backend"]
     CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
 else:
     CORS_ALLOW_ALL_ORIGINS = True
-    ALLOWED_HOSTS = []
     CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
 
 CELERY_TIMEZONE = "Asia/Seoul"
@@ -179,7 +177,9 @@ KAKAO_REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY", "")
 KAKAO_SECRET_KEY = os.environ.get("KAKAO_SECRET_KEY", "")
 
 SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_ID", "")
-SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_SECRET", "")
+SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.environ.get(
+    "SOCIAL_AUTH_GOOGLE_CLIENT_SECRET", ""
+)
 
 SOCIAL_AUTH_NAVER_CLIENT_ID = os.environ.get("SOCIAL_AUTH_NAVER_CLIENT_ID", "")
 SOCIAL_AUTH_NAVER_SECRET = os.environ.get("SOCIAL_AUTH_NAVER_SECRET", "")
