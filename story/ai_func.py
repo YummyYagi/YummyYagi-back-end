@@ -41,10 +41,10 @@ def translate_text(deepl_translator, user_input_message, deepl_target_lang="EN-U
     return trans_result
 
 
-def check_toxicity(pers_client, checkToxicity_str):
+def check_toxicity(pers_client, check_toxicity_str):
     # Perspective API 사용하여 User가 입력한 질문에서 폭력성 검출하기
     analyze_request = {
-        "comment": {"text": checkToxicity_str},
+        "comment": {"text": check_toxicity_str},
         "requestedAttributes": {"TOXICITY": {}},
     }
     pers_response = pers_client.comments().analyze(body=analyze_request).execute()
@@ -53,9 +53,9 @@ def check_toxicity(pers_client, checkToxicity_str):
     return pers_score
 
 
-def setup_gpt_messages(inputQurry):
+def setup_gpt_messages(input_query):
     # GPT 메세지 설정
-    input_query = inputQurry.text
+    input_query = input_query.text
     input_gpt_messages = []
     input_gpt_messages.append(
         {
