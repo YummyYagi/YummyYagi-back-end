@@ -144,17 +144,15 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 FE_URL = os.environ.get("FE_URL", "")
 BE_URL = os.environ.get("BE_URL", "")
 
-if DEBUG == False:
-    CORS_ORIGIN_WHITELIST = [
-        FE_URL,
-        BE_URL,
-    ]
 
-    CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
-    CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
-else:
-    CORS_ALLOW_ALL_ORIGINS = True
-    CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
+CORS_ORIGIN_WHITELIST = [
+    FE_URL,
+    BE_URL,
+]
+
+CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
+CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
+
 
 CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_RESULT_BACKEND = "django-db"
