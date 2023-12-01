@@ -106,7 +106,7 @@ class User(AbstractBaseUser) :
 class UserStoryTimeStamp(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,related_name='timestamps')
     story = models.ForeignKey(Story, on_delete=models.CASCADE,related_name='timestamps')
-    timestamp=models.DateTimeField('Time Stamp',blank=True,null=True)
+    timestamp=models.DateTimeField('Time Stamp',blank=True,null=True,auto_now_add=True)
         
 
 class Ticket(models.Model):
@@ -123,7 +123,7 @@ class Ticket(models.Model):
     ticket_owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='작성자', related_name='tickets', on_delete=models.CASCADE)
     golden_ticket = models.PositiveIntegerField('골드 티켓', default=1)
     silver_ticket = models.PositiveIntegerField('실버 티켓', default=2)
-    pink_ticket = models.PositiveBigIntegerField('핑크 티켓', default=10)
+    pink_ticket = models.PositiveIntegerField('핑크 티켓', default=10)
 
     class Meta:
         db_table = 'ticket'

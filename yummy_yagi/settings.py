@@ -102,8 +102,12 @@ else:
             'NAME':BASE_DIR/'db.sqlite3',
         }
     }
-CORS_ORIGIN_WHITELIST=['https://api.yummyyagi.com','https://www.yummyyagi.com',]
+FE_URL=os.environ.get('DEV_FE_URL','')
+BE_URL=os.environ.get('DEV_BE_URL','')
+
+CORS_ORIGIN_WHITELIST=[FE_URL,BE_URL,]
 CSRF_TRUSTED_ORIGINS=CORS_ORIGIN_WHITELIST
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
