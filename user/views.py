@@ -77,7 +77,7 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
 
-BASE_URL = f"{settings.FE_URL}"
+BASE_URL = f"{settings.FE_URL}/"
 STATE = secrets.token_urlsafe(16)
 
 
