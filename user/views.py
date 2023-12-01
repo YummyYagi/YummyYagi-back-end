@@ -690,3 +690,12 @@ class UserTicketsView(APIView):
             return Response(
                 {"error": "사용자의 티켓 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class CheckLoginView(APIView):
+    """access토큰이 만료된 뷰입니다."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"status": "200", "success": "access토큰이 유효합니다."}, status=status.HTTP_200_OK)
