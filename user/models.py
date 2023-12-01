@@ -110,11 +110,16 @@ class User(AbstractBaseUser):
 
 
 class UserStoryTimeStamp(models.Model):
+    """
+    - user : 스토리를 조회한 유저입니다.
+    - story : 사용자가 조회한 스토리입니다.
+    - timestamp : 사용자가 스토리를 조회한 시간을 기록합니다.
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="timestamps")
     story = models.ForeignKey(
         Story, on_delete=models.CASCADE, related_name="timestamps"
     )
-    timestamp = models.DateTimeField("Time Stamp", blank=True, null=True)
+    timestamp = models.DateTimeField("Time Stamp", auto_now=True, blank=True, null=True)
 
 
 class Ticket(models.Model):
