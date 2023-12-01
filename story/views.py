@@ -48,7 +48,7 @@ class RequestFairytail(APIView):
         pers_client = load_pers_model()
 
         # User에게 질문 받기
-        user_input_message = request.data["subject"]
+        user_input_message = request.data.get("subject", "")
 
         # User에게 받은 질문이 영어일 경우 번역 없이 폭력성 검사 진행
         if user_input_message == "EN-US":
@@ -103,7 +103,7 @@ class RequestFairytail(APIView):
             )
 
         # 사용자가 선택한 언어가 영어일 경우 번역 없이 반환
-        if request.data["target_language"] == "EN-US":
+        if request.data.get["target_language"] == "EN-US":
             gpt_trans_result = gpt_response
         else:
             # 사용자가 선택한 언어로 GPT 답변 내용 번역
@@ -521,7 +521,7 @@ class CommentView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-    def delete(self, request, comment_id):
+    def delete(self, request, story_id, comment_id):
         """댓글을 삭제합니다."""
         if request.user.is_authenticated:
             comment = get_object_or_404(Comment, id=comment_id)
