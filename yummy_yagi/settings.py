@@ -10,7 +10,7 @@ env = environ.Env(DEBUG=(bool, True))
 environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
 DEBUG = os.environ.get("DEBUG", "")
 SECRET_KEY = env("SECRET_KEY")
-ALLOWED_HOSTS = ["backend"]
+ALLOWED_HOSTS = []
 
 GPT_API_KEY = os.environ.get("GPT_DALLE_API_KEY", "")
 DEEPL_AUTH_KEY = os.environ.get("DEEPL_AUTH_KEY", "")
