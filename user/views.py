@@ -17,7 +17,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import get_object_or_404
 from user.models import User, Ticket, PaymentResult as PaymentResultModel
-from user.permissions import IsAuthenticatedOrIsOwner, IsAuthenticated
+from user.permissions import IsOwner, IsAuthenticated
 from user.serializers import (
     UserSerializer,
     LoginSerializer,
@@ -397,7 +397,7 @@ class MyPageView(APIView):
 
 
 class UserInfoView(APIView):
-    permission_classes = [IsAuthenticatedOrIsOwner]
+    permission_classes = [IsOwner, IsAuthenticated]
 
     def get(self, request):
         """사용자의 회원 정보 수정 페이지입니다."""
@@ -493,7 +493,7 @@ class UserInfoView(APIView):
 
 
 class QnaView(APIView):
-    permission_classes = [IsAuthenticatedOrIsOwner]
+    permission_classes = [IsAuthenticated]
 
     """Q&A를 작성합니다."""
 

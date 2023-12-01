@@ -22,7 +22,7 @@ from story.serializers import (
     StoryCreateSerializer,
     ContentCreateSerializer,
 )
-from story.permissions import IsAuthenticated
+from user.permissions import IsAuthenticated
 
 from .ai_func import (
     translateText,
