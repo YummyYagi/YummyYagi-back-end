@@ -152,13 +152,11 @@ class RequestImage(APIView):
             # Deepl을 사용하여 텍스트 번역
             trans_script = translate_text(deepl_translator, script)
         except deepl.exceptions.QuotaExceededException as e:
-            logger.exception(f"DeePl) Quota exceeded: {str(e)}")
             return Response(
                 {"status": "400", "error": "번역에 실패했습니다. 관리자에게 문의해주세요."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except ValueError as e:
-            logger.exception(f"DeePl) Translation Error: {str(e)}")
             return Response(
                 {"status": "400", "error": "번역에 실패했습니다. 내용을 수정해주세요."},
                 status=status.HTTP_400_BAD_REQUEST,
