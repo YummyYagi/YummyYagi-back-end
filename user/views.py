@@ -61,8 +61,8 @@ class RegisterView(APIView):
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
 
                 # 이메일에 인증 링크 포함하여 보내기
-                verification_url = f'{settings.BE_URL}/user/verify-email/{uid}/{token}/'
-                
+                verification_url = f"{settings.BE_URL}/user/verify-email/{uid}/{token}/"
+
                 send_verification_email.delay(user.id, verification_url, user.email)
 
                 return Response(
@@ -529,7 +529,7 @@ class PasswordResetView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
         # 이메일에 인증 링크 포함하여 보내기
-        verification_url = f'{settings.BE_URL}/user/verify-email-for-pw/{uid}/{token}/'
+        verification_url = f"{settings.BE_URL}/user/verify-email-for-pw/{uid}/{token}/"
         send_verification_email_for_pw.delay(user.id, verification_url, user.email)
 
         return Response(

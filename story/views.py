@@ -297,7 +297,7 @@ class StoryView(APIView):
             """상세 페이지"""
             story = Story.objects.get(id=story_id)
             self.user_viewed(story)
-                
+
             if story.hate_count < 5:
                 serializer = StorySerializer(story)
                 return Response(
@@ -335,7 +335,9 @@ class StoryView(APIView):
                     image_content.name = "story_image.jpg"
                     image_file_list.append(image_content)
                 else:
-                    image_file_list.append(f'{settings.BE_URL}/media/story/404_not_found.png')
+                    image_file_list.append(
+                        f"{settings.BE_URL}/media/story/404_not_found.png"
+                    )
 
         content_data = []
 
@@ -392,13 +394,16 @@ class StoryView(APIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
         else:
-            return Response({'status':'401', 'error':'로그인 후 이용해주세요'}, status=status.HTTP_401_UNAUTHORIZED)
-    
-    def user_viewed(self,story):
-        user=self.request.user
+            return Response(
+                {"status": "401", "error": "로그인 후 이용해주세요"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+    def user_viewed(self, story):
+        user = self.request.user
         if not user.is_authenticated:
             return
-        ust, _ =UserStoryTimeStamp.objects.get_or_create(user=user,story=story)
+        ust, _ = UserStoryTimeStamp.objects.get_or_create(user=user, story=story)
         ust.save()
         return ust.timestamp
 
@@ -501,12 +506,21 @@ class CommentView(APIView):
             serializer = CommentCreateSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save(author=request.user, story_id=story_id)
-                return Response({'status':'201', 'success':'댓글 작성 완료'}, status=status.HTTP_201_CREATED)
-            elif 'content' in serializer.errors:
-                return Response({'status':'400', 'error':'댓글 내용을 입력해주세요'}, status=status.HTTP_400_BAD_REQUEST)
-        else :
-            return Response({'status':'401', 'error':'로그인 후 이용가능합니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-    
+                return Response(
+                    {"status": "201", "success": "댓글 작성 완료"},
+                    status=status.HTTP_201_CREATED,
+                )
+            elif "content" in serializer.errors:
+                return Response(
+                    {"status": "400", "error": "댓글 내용을 입력해주세요"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            return Response(
+                {"status": "401", "error": "로그인 후 이용가능합니다."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
     def delete(self, request, comment_id):
         """댓글을 삭제합니다."""
         if request.user.is_authenticated:
