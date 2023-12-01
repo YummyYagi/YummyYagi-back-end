@@ -30,5 +30,5 @@ jobs:
             echo 'POSTGRES_USER=${{secrets.POSTGRES_USER}}' >> .env
             echo 'POSTGRES_PASSWORD=${{secrets.POSTGRES_PASSWORD}}' >> .env
             echo 'POSTGRES_HOST=${{secrets.POSTGRES_HOST}}' >> .env
-            sudo docker-compose down 
-            sudo docker-compose up -d
+            sudo docker compose down 
+            sudo docker compose up -d
