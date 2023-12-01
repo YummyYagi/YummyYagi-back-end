@@ -25,14 +25,14 @@ from story.serializers import (
 from story.permissions import IsAuthenticated
 
 from .ai_func import (
-    translateText,
+    translate_text,
     generate_images_from_text,
-    loadDeeplModel,
-    loadOpenAIModel,
-    loadPersModel,
-    runGPT,
-    checkToxicity,
-    setupGPTMessages,
+    load_deepl_model,
+    load_open_ai_model,
+    load_pers_model,
+    run_gpt,
+    check_toxicity,
+    setup_gpt_messages,
 )
 
 # 로그 파일의 이름을 'error.log'로 설정하고, 로그 레벨을 ERROR로 설정하여 ERROR 레벨 이상의 로그만 기록
@@ -43,9 +43,9 @@ logger = logging.getLogger(__name__)
 class RequestFairytail(APIView):
     def post(self, request):
         # 모델 로드하기
-        deepl_translator = loadDeeplModel()
-        openAI_client, chatGPT_model = loadOpenAIModel()
-        pers_client = loadPersModel()
+        deepl_translator = load_deepl_model()
+        openAI_client, chatGPT_model = load_open_ai_model()
+        pers_client = load_pers_model()
 
         # User에게 질문 받기
         user_input_message = request.data["subject"]
@@ -56,7 +56,7 @@ class RequestFairytail(APIView):
         else:
             try:
                 # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
-                trans_result = translateText(deepl_translator, user_input_message)
+                trans_result = translate_text(deepl_translator, user_input_message)
 
                 # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
                 trans_str_result = str(trans_result)
@@ -74,7 +74,7 @@ class RequestFairytail(APIView):
                 )
 
         # Perspective API 사용하여 User가 입력한 질문에서 폭력성 검출하기
-        pers_user_score = checkToxicity(pers_client, trans_str_result)
+        pers_user_score = check_toxicity(pers_client, trans_str_result)
 
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_user_score > 0.3:
@@ -83,13 +83,13 @@ class RequestFairytail(APIView):
                 {"status": "400", "error": "주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요."},
                 status=status.HTTP_400_BAD_REQUEST,
             )  # GPT 메세지 설정
-        input_gpt_messages = setupGPTMessages(trans_result)
+        input_gpt_messages = setup_gpt_messages(trans_result)
 
         # GPT 실행
-        gpt_response = runGPT(openAI_client, chatGPT_model, input_gpt_messages)
+        gpt_response = run_gpt(openAI_client, chatGPT_model, input_gpt_messages)
 
         # Perspective API 사용하여 GPT가 답변한 내용에서 폭력성 검출하기
-        pers_gpt_score = checkToxicity(pers_client, gpt_response)
+        pers_gpt_score = check_toxicity(pers_client, gpt_response)
 
         # 폭력성 수치를 넘으면 다시 입력하게 하기
         if pers_gpt_score > 0.3:
@@ -108,7 +108,7 @@ class RequestFairytail(APIView):
         else:
             # 사용자가 선택한 언어로 GPT 답변 내용 번역
             try:
-                gpt_trans_result = translateText(
+                gpt_trans_result = translate_text(
                     deepl_translator, gpt_response, request.data["target_language"]
                 )
             except deepl.exceptions.QuotaExceededException as e:
@@ -148,9 +148,9 @@ class RequestImage(APIView):
 
         try:
             # deepl 모델 로드
-            deepl_translator = loadDeeplModel()
+            deepl_translator = load_deepl_model()
             # Deepl을 사용하여 텍스트 번역
-            trans_script = translateText(deepl_translator, script)
+            trans_script = translate_text(deepl_translator, script)
         except deepl.exceptions.QuotaExceededException as e:
             self.logger.exception(f"DeePl) Quota exceeded: {str(e)}")
             return Response(
