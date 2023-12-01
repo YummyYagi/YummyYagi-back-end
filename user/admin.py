@@ -10,30 +10,29 @@ from user.models import User, Claim, Ticket, PaymentResult
 class UserCreationForm(forms.ModelForm):
     """
     사용자 생성 폼입니다.
-    
-    관리자 페이지에서 새로운 사용자를 생성하기 위한 양식으로 필수 필드와 
+
+    관리자 페이지에서 새로운 사용자를 생성하기 위한 양식으로 필수 필드와
     """
-    password1 = forms.CharField(label='비밀번호', widget=forms.PasswordInput)
-    password2 = forms.CharField(
-        label='비밀번호 확인', widget=forms.PasswordInput
-    )
+
+    password1 = forms.CharField(label="비밀번호", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="비밀번호 확인", widget=forms.PasswordInput)
 
     class Meta:
         model = User
-        fields = ['email', 'nickname', 'profile_img', 'country']
+        fields = ["email", "nickname", "profile_img", "country"]
 
     def clean_password2(self):
         # Check that the two password entries match
-        password1 = self.cleaned_data.get('password1')
-        password2 = self.cleaned_data.get('password2')
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
-            raise ValidationError('비밀번호가 비밀번호 확인과 일치하지 않습니다.')
+            raise ValidationError("비밀번호가 비밀번호 확인과 일치하지 않습니다.")
         return password2
 
     def save(self, commit=True):
         # Save the provided password in hashed format
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password1'])
+        user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
         return user
@@ -42,17 +41,25 @@ class UserCreationForm(forms.ModelForm):
 class UserChangeForm(forms.ModelForm):
     """
     사용자 정보 수정 폼입니다.
-    
-    이 폼은 사용자 정보를 편집하는 양식으로 
+
+    이 폼은 사용자 정보를 편집하는 양식으로
     사용자(User) 모델에 정의된 모든 필드를 포함하지만
     비밀번호 필드는 해시된 비밀번호로만 표시하고 수정할 수 없도록 합니다.
     """
+
     password = ReadOnlyPasswordHashField()
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'nickname',
-                  'is_active', 'is_admin', 'profile_img', 'country']
+        fields = [
+            "email",
+            "password",
+            "nickname",
+            "is_active",
+            "is_admin",
+            "profile_img",
+            "country",
+        ]
 
 
 class UserAdmin(BaseUserAdmin):
@@ -61,47 +68,70 @@ class UserAdmin(BaseUserAdmin):
 
     사용자 정보를 생성하거나 수정할 때 사용되는 양식입니다.
     """
+
     form = UserChangeForm
     add_form = UserCreationForm
 
-    list_display = ['email', 'is_admin', 'nickname', 'profile_img', 'country']
-    list_filter = ['is_admin']
+    list_display = ["email", "is_admin", "nickname", "profile_img", "country"]
+    list_filter = ["is_admin"]
     fieldsets = [
-        (None, {'fields': ['email', 'password']}),
-        ('Personal info', {'fields': ['nickname', 'profile_img', 'country']}),
-        ('Permissions', {'fields': ['is_admin', 'is_active']}),
+        (None, {"fields": ["email", "password"]}),
+        ("Personal info", {"fields": ["nickname", "profile_img", "country"]}),
+        ("Permissions", {"fields": ["is_admin", "is_active"]}),
     ]
     add_fieldsets = [
         (
             None,
             {
-                'classes': ['wide'],
-                'fields': ['email', 'password1', 'password2', 'nickname', 'profile_img', 'country'],
+                "classes": ["wide"],
+                "fields": [
+                    "email",
+                    "password1",
+                    "password2",
+                    "nickname",
+                    "profile_img",
+                    "country",
+                ],
             },
         ),
     ]
-    search_fields = ['email']
-    ordering = ['email']
+    search_fields = ["email"]
+    ordering = ["email"]
     filter_horizontal = []
 
 
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)
 
+
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    
-    list_display = ('id', 'ticket_owner', 'golden_ticket', 'silver_ticket', 'pink_ticket')
+    list_display = (
+        "id",
+        "ticket_owner",
+        "golden_ticket",
+        "silver_ticket",
+        "pink_ticket",
+    )
     list_per_page = 20
-    
+
+
 @admin.register(PaymentResult)
 class PaymentResultAdmin(admin.ModelAdmin):
-    
-    list_display = ('id', 'buyer_email', 'buyer_name', 'name', 'paid_amount', 'currency', 'pg_provider', 'status')
+    list_display = (
+        "id",
+        "buyer_email",
+        "buyer_name",
+        "name",
+        "paid_amount",
+        "currency",
+        "pg_provider",
+        "status",
+    )
     list_per_page = 20
+
 
 @admin.register(Claim)
 class ClaimAdmin(admin.ModelAdmin):
-    
-    list_display = ('id', 'author', 'content')
+    list_display = ("id", "author", "content")
     list_per_page = 20
