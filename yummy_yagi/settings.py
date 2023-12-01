@@ -10,18 +10,15 @@ env = environ.Env(DEBUG=(bool, True))
 environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
 
 SECRET_KEY = env("SECRET_KEY")
-DEBUG = env("DEBUG")
+DEBUG = os.environ.get("DEBUG", "")
 
-GPT_API_KEY = env("GPT_DALLE_API_KEY")
-DEEPL_AUTH_KEY = env("DEEPL_AUTH_KEY")
-PRES_API_KEY = env("PRES_API_KEY")
+GPT_API_KEY = os.environ.get("GPT_DALLE_API_KEY", "")
+DEEPL_AUTH_KEY = os.environ.get("DEEPL_AUTH_KEY", "")
+PRES_API_KEY = os.environ.get("PRES_API_KEY", "")
 
-KAKAO_API_KEY = env("KAKAO_API_KEY")
+KAKAO_API_KEY = os.environ.get("KAKAO_API_KEY", "")
 
-PG_CID = env("PG_CID")
-
-ALLOWED_HOSTS = ["backend"]
-
+PG_CID = os.environ.get("PG_CID", "")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -97,14 +94,6 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
-FE_URL = os.environ.get("FE_URL", "")
-BE_URL = os.environ.get("BE_URL", "")
-
-CORS_ORIGIN_WHITELIST = [
-    FE_URL,
-    BE_URL,
-]
-CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -145,14 +134,29 @@ DEFAULT_PROFILE_IMG = "media/user/default_profile.jpg"
 
 AUTH_USER_MODEL = "user.User"
 
-EMAIL_PORT = env("EMAIL_PORT")
-EMAIL_HOST = env("EMAIL_HOST")
-EMAIL_HOST_USER = env("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = env("EMAIL_USE_TLS")
+EMAIL_PORT = os.environ.get("EMAIL_PORT", "")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "")
+FE_URL = os.environ.get("FE_URL", "")
+BE_URL = os.environ.get("BE_URL", "")
+
+if DEBUG == False :
+    CORS_ORIGIN_WHITELIST = [
+        FE_URL,
+        BE_URL,
+    ]
+
+    CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
+    ALLOWED_HOSTS = ["backend"]
+    CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
+else:
+    CORS_ALLOW_ALL_ORIGINS = True
+    ALLOWED_HOSTS = []
+    CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
 
 CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_RESULT_BACKEND = "django-db"
@@ -171,14 +175,14 @@ CACHES = {
     }
 }
 
-KAKAO_REST_API_KEY = env("KAKAO_REST_API_KEY")
-KAKAO_SECRET_KEY = env("KAKAO_SECRET_KEY")
+KAKAO_REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY", "")
+KAKAO_SECRET_KEY = os.environ.get("KAKAO_SECRET_KEY", "")
 
-SOCIAL_AUTH_GOOGLE_CLIENT_ID = env("SOCIAL_AUTH_GOOGLE_CLIENT_ID")
-SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = env("SOCIAL_AUTH_GOOGLE_CLIENT_SECRET")
+SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_ID", "")
+SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_SECRET", "")
 
-SOCIAL_AUTH_NAVER_CLIENT_ID = env("SOCIAL_AUTH_NAVER_CLIENT_ID")
-SOCIAL_AUTH_NAVER_SECRET = env("SOCIAL_AUTH_NAVER_SECRET")
+SOCIAL_AUTH_NAVER_CLIENT_ID = os.environ.get("SOCIAL_AUTH_NAVER_CLIENT_ID", "")
+SOCIAL_AUTH_NAVER_SECRET = os.environ.get("SOCIAL_AUTH_NAVER_SECRET", "")
 
 
 SIMPLE_JWT = {
