@@ -102,8 +102,8 @@ else:
             'NAME':BASE_DIR/'db.sqlite3',
         }
     }
-FE_URL=os.environ.get('DEV_FE_URL','')
-BE_URL=os.environ.get('DEV_BE_URL','')
+FE_URL=os.environ.get('FE_URL','')
+BE_URL=os.environ.get('BE_URL','')
 
 CORS_ORIGIN_WHITELIST=[FE_URL,BE_URL,]
 CSRF_TRUSTED_ORIGINS=CORS_ORIGIN_WHITELIST
