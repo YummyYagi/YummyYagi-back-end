@@ -1,7 +1,11 @@
 import time
 import logging
+from django.conf import settings
 
-logging.basicConfig(filename='info.log', level=logging.INFO)
+# 로깅 설정
+logging.config.dictConfig(settings.LOGGING)
+
+# 로거 가져오기
 info_logger = logging.getLogger('info_logger')
 
 def timing_decorator(func):

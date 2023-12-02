@@ -9,6 +9,10 @@ from googleapiclient import discovery
 from rest_framework import status
 from rest_framework.response import Response
 
+# 로깅 설정
+logging.config.dictConfig(settings.LOGGING)
+
+# 로거 가져오기
 error_logger = logging.getLogger("error_logger")
 
 

@@ -32,7 +32,10 @@ from .ai_func import (
     setup_gpt_messages,
 )
 
-logging.basicConfig(filename="info.log", level=logging.INFO)
+# 로깅 설정
+logging.config.dictConfig(settings.LOGGING)
+
+# 로거 가져오기
 info_logger = logging.getLogger("info_logger")
 error_logger = logging.getLogger("error_logger")
 
