@@ -43,7 +43,7 @@ class RegisterView(APIView):
     """사용자 정보를 받아 회원가입 합니다."""
 
     def post(self, request):
-        if request.data["password"] != request.data["password_check"]:
+        if request.data.get("password", "") != request.data.get("password_check", ""):
             return Response(
                 {"status": "400", "error": "비밀번호를 확인해주세요."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -99,7 +99,7 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
 
-BASE_URL = f"{settings.FE_URL}/"
+BASE_URL = f"{settings.BASE_URL}"
 STATE = secrets.token_urlsafe(16)
 
 
@@ -430,25 +430,32 @@ class UserInfoView(APIView):
 
         user = get_object_or_404(User, id=request.user.id)
         if (
-            not request.data["current_password"]
-            or not request.data["new_password"]
-            or not request.data["new_password_check"]
+            not request.data.get("current_password", "")
+            or not request.data.get("new_password", "")
+            or not request.data.get("new_password_check", "")
         ):
             return Response(
                 {"status": "400", "error": "모든 필수 정보를 입력해주세요."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        elif check_password(request.data["current_password"], user.password) == False:
+        elif (
+            check_password(request.data.get("current_password", ""), user.password)
+            == False
+        ):
             return Response(
                 {"status": "400", "error": "현재 비밀번호가 일치하지 않습니다."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        elif request.data["current_password"] == request.data["new_password"]:
+        elif request.data.get("current_password", "") == request.data.get(
+            "new_password", ""
+        ):
             return Response(
                 {"status": "400", "error": "비밀번호 변경에는 현재 비밀번호와 다른 비밀번호를 사용해야 합니다."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        elif request.data["new_password"] != request.data["new_password_check"]:
+        elif request.data.get("new_password", "") != request.data.get(
+            "new_password_check", ""
+        ):
             return Response(
                 {"status": "400", "error": "새 비밀번호가 새 비밀번호 확인과 일치하지 않습니다."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -521,7 +528,7 @@ class PasswordResetView(APIView):
 
     def post(self, request):
         try:
-            user = User.objects.get(email=request.data["email"])
+            user = User.objects.get(email=request.data.get("email", ""))
         except User.DoesNotExist:
             return Response({"status": "400", "error": "입력하신 이메일을 찾을 수 없습니다."})
 
@@ -570,8 +577,8 @@ def load_payment(request, user):
     order_data = {
         "pg_cid": settings.PG_CID,
         "merchant_uid": merchant_uid,
-        "amount": request.data["amount"],
-        "name": request.data["name"],
+        "amount": request.data.get("amount", ""),
+        "name": request.data.get("name", ""),
         "buyer_email": user.email,
         "buyer_name": user.nickname,
     }
@@ -595,7 +602,7 @@ class PaymentPageView(APIView):
         total_paid_amount = user_total_payment["paid_amount__sum"] or 0
 
         # 새로운 결제 금액
-        new_payment_amount = int(request.data["amount"].split(" ")[0])
+        new_payment_amount = int(request.data.get("amount", "").split(" ")[0])
 
         # 사용자 테스트를 위한 결제 제한 로직
 
@@ -618,8 +625,8 @@ class PaymentResult(APIView):
 
     def post(self, request):
         # 구매자 이메일과 현재 로그인한 사용자 이메일 비교
-        if request.user.email == request.data["rsp"]["buyer_email"]:
-            serializer = PaymentResultSerializer(data=request.data["rsp"])
+        if request.user.email == request.data.get("rsp", {}).get("buyer_email", ""):
+            serializer = PaymentResultSerializer(data=request.data.get("rsp", ""))
             print(serializer)
             if serializer.is_valid():
                 result = serializer.save()
@@ -690,3 +697,14 @@ class UserTicketsView(APIView):
             return Response(
                 {"error": "사용자의 티켓 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class CheckLoginView(APIView):
+    """access토큰이 만료된 뷰입니다."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(
+            {"status": "200", "success": "access토큰이 유효합니다."}, status=status.HTTP_200_OK
+        )

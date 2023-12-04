@@ -7,11 +7,8 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 from django.utils.timezone import now
 import requests
-
+import time
 import logging
-import deepl
-import openai
-
 from story.models import Story, Comment
 from user.models import User, UserStoryTimeStamp, Ticket
 from story.serializers import (
@@ -35,9 +32,12 @@ from .ai_func import (
     setup_gpt_messages,
 )
 
-# 로그 파일의 이름을 'error.log'로 설정하고, 로그 레벨을 ERROR로 설정하여 ERROR 레벨 이상의 로그만 기록
-logging.basicConfig(filename="error.log", level=logging.ERROR)
-logger = logging.getLogger(__name__)
+# 로깅 설정
+logging.config.dictConfig(settings.LOGGING)
+
+# 로거 가져오기
+info_logger = logging.getLogger("info_logger")
+error_logger = logging.getLogger("error_logger")
 
 
 class RequestFairytail(APIView):
@@ -48,30 +48,14 @@ class RequestFairytail(APIView):
         pers_client = load_pers_model()
 
         # User에게 질문 받기
-        user_input_message = request.data["subject"]
+        user_input_message = request.data.get("subject", "")
+        print(request.data.get("subject", ""))
 
-        # User에게 받은 질문이 영어일 경우 번역 없이 폭력성 검사 진행
-        if user_input_message == "EN-US":
-            trans_str_result = user_input_message
-        else:
-            try:
-                # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
-                trans_result = translate_text(deepl_translator, user_input_message)
+        # Deepl을 사용하여 User에게 받은 질문 영어로 번역하기
+        trans_result = translate_text(deepl_translator, user_input_message)
 
-                # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
-                trans_str_result = str(trans_result)
-            except deepl.exceptions.QuotaExceededException as e:
-                logger.exception(f"DeePl) Quota exceeded: {str(e)}")
-                return Response(
-                    {"status": "400", "error": "번역에 실패했습니다. 관리자에게 문의해주세요."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            except ValueError as e:
-                logger.exception(f"DeePl) Translation Error: {str(e)}")
-                return Response(
-                    {"status": "400", "error": "번역에 실패했습니다. 내용을 수정해주세요."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
+        trans_str_result = str(trans_result)
 
         # Perspective API 사용하여 User가 입력한 질문에서 폭력성 검출하기
         pers_user_score = check_toxicity(pers_client, trans_str_result)
@@ -82,7 +66,9 @@ class RequestFairytail(APIView):
             return Response(
                 {"status": "400", "error": "주제에서 폭력성이 검출되어 동화 생성이 불가능합니다. 주제를 수정해주세요."},
                 status=status.HTTP_400_BAD_REQUEST,
-            )  # GPT 메세지 설정
+            )
+
+        # GPT 메세지 설정
         input_gpt_messages = setup_gpt_messages(trans_result)
 
         # GPT 실행
@@ -103,33 +89,18 @@ class RequestFairytail(APIView):
             )
 
         # 사용자가 선택한 언어가 영어일 경우 번역 없이 반환
-        if request.data["target_language"] == "EN-US":
+        if request.data.get("target_language", "") == "EN-US":
             gpt_trans_result = gpt_response
         else:
             # 사용자가 선택한 언어로 GPT 답변 내용 번역
-            try:
-                gpt_trans_result = translate_text(
-                    deepl_translator, gpt_response, request.data["target_language"]
-                )
-            except deepl.exceptions.QuotaExceededException as e:
-                logger.exception(f"DeePl) Quota exceeded: {str(e)}")
-                return Response(
-                    {"status": "400", "error": "번역에 실패했습니다. 관리자에게 문의해주세요."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            except ValueError as e:
-                logger.exception(f"DeePl) Translation Error: {str(e)}")
-                return Response(
-                    {"status": "400", "error": "번역에 실패했습니다. 내용을 수정해주세요."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            gpt_trans_result = translate_text(
+                deepl_translator, gpt_response, request.data.get("target_language", "")
+            )
 
-            # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
-            gpt_trans_result = str(gpt_trans_result)
+        # 번역된 값 형변환 'deepl.api_data.TextResult' -> 'str'
+        gpt_trans_result = str(gpt_trans_result)
         print(f"번역 ChatGPT : {gpt_trans_result}")
-
         input_gpt_messages.append({"role": "assistant", "content": gpt_response})
-
         return Response(
             {
                 "status": "201",
@@ -146,83 +117,40 @@ class RequestImage(APIView):
     def post(self, request):
         script = request.data.get("script", "")
 
-        try:
-            # deepl 모델 로드
-            deepl_translator = load_deepl_model()
-            # Deepl을 사용하여 텍스트 번역
-            trans_script = translate_text(deepl_translator, script)
-        except deepl.exceptions.QuotaExceededException as e:
-            return Response(
-                {"status": "400", "error": "번역에 실패했습니다. 관리자에게 문의해주세요."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except ValueError as e:
-            return Response(
-                {"status": "400", "error": "번역에 실패했습니다. 내용을 수정해주세요."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # deepl 모델 로드
+        deepl_translator = load_deepl_model()
+        # Deepl을 사용하여 텍스트 번역
+        trans_script = translate_text(deepl_translator, script)
 
         # 사용자가 요청한 티켓 타입 추출
         ticket_type = request.data.get("ticket", "")
 
-        try:
-            # 사용자의 티켓 정보 조회
-            user_tickets = Ticket.objects.get(ticket_owner=request.user)
+        # 사용자의 티켓 정보 조회
+        user_tickets = Ticket.objects.get(ticket_owner=request.user)
 
-            # 티켓 타입에 따라 이미지 생성 및 티켓 차감
-            if ticket_type == "golden_ticket" and user_tickets.golden_ticket > 0:
-                image_url = generate_images_from_text(
-                    trans_script, "dall-e-3", "hd", user_tickets
-                )
-                user_tickets.golden_ticket -= 1
-            elif ticket_type == "silver_ticket" and user_tickets.silver_ticket > 0:
-                image_url = generate_images_from_text(
-                    trans_script, "dall-e-3", "standard", user_tickets
-                )
-                user_tickets.silver_ticket -= 1
-            elif ticket_type == "pink_ticket" and user_tickets.pink_ticket > 0:
-                image_url = generate_images_from_text(
-                    trans_script, "dall-e-2", "standard", user_tickets
-                )
-                user_tickets.pink_ticket -= 1
-            else:
-                return Response(
-                    {"status": "402", "error": f"{ticket_type}이 부족합니다."},
-                    status=status.HTTP_402_PAYMENT_REQUIRED,
-                )
-
-            # 티켓 차감 및 변경된 정보 저장
-            user_tickets.save()
+        # 티켓 타입에 따라 이미지 생성 및 티켓 차감
+        if ticket_type == "golden_ticket" and user_tickets.golden_ticket > 0:
+            image_url = generate_images_from_text(trans_script, "dall-e-3", "hd")
+            user_tickets.golden_ticket -= 1
+        elif ticket_type == "silver_ticket" and user_tickets.silver_ticket > 0:
+            image_url = generate_images_from_text(trans_script, "dall-e-3", "standard")
+            user_tickets.silver_ticket -= 1
+        elif ticket_type == "pink_ticket" and user_tickets.pink_ticket > 0:
+            image_url = generate_images_from_text(trans_script, "dall-e-2", "standard")
+            user_tickets.pink_ticket -= 1
+        else:
             return Response(
-                {"status": "201", "image_url": image_url},
-                status=status.HTTP_201_CREATED,
+                {"status": "402", "error": f"{ticket_type}이 부족합니다."},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
             )
 
-        # OpenAI RateLimitError 처리
-        except openai.RateLimitError as e:
-            error_message = "연속된 요청으로 이미지 생성 중 예상치 못한 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-            logging.exception(f"DALL-E) Rate Limit Error: {str(e)}")
-            return Response(
-                {"status": "429", "error": error_message},
-                status.HTTP_429_TOO_MANY_REQUESTS,
-            )
+        # 티켓 차감 및 변경된 정보 저장
+        user_tickets.save()
 
-        # OpenAI BadRequestError 처리
-        except openai.BadRequestError as e:
-            error_message = "정책상의 이유로 이미지 생성이 불가능합니다. 내용을 수정해주세요."
-            logging.exception(f"DALL-E) Bad Request Error: {str(e)}")
-            return Response(
-                {"status": "400", "error": error_message}, status.HTTP_400_BAD_REQUEST
-            )
-
-        # 그 외 예외 처리 및 로깅
-        except Exception as e:
-            error_message = "죄송합니다. 서버에서 오류가 발생했습니다. 문제가 지속되면 관리자에게 문의해주세요."
-            logging.exception(f"DALL-E) Unexpected Error: {str(e)}")
-            return Response(
-                {"status": "500", "error": error_message},
-                status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        return Response(
+            {"status": "201", "image_url": image_url},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class StorySortedByLikeView(APIView):
@@ -317,9 +245,9 @@ class StoryView(APIView):
                 {"status": "401", "error": "로그인 후 이용해주세요."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
-        paragraph_list = request.data["paragraph_list"]
-        image_url_list = request.data["image_url_list"]
+        start_time = time.time()
+        paragraph_list = request.data.get("paragraph_list", "")
+        image_url_list = request.data.get("image_url_list", "")
 
         image_file_list = []
 
@@ -360,7 +288,11 @@ class StoryView(APIView):
                 story = story_serializer.save(author=request.user)
                 content_serializer.save(story=story)
                 story_id = story.id
+                end_time = time.time()
+                info_logger.info(f"{end_time - start_time:.2f} seconds, 동화책 출판 성공")
             else:
+                end_time = time.time()
+                error_logger.error(f"story_serializer : {story_serializer.error}")
                 return Response(
                     {"status": "400", "error": "동화책 작성에 실패했습니다."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -370,6 +302,8 @@ class StoryView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         else:
+            end_time = time.time()
+            error_logger.error(f"content_serializer : {content_serializer.error}")
             return Response(
                 {"status": "400", "error": "동화 페이지 작성에 실패했습니다."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -519,7 +453,7 @@ class CommentView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-    def delete(self, request, comment_id):
+    def delete(self, request, story_id, comment_id):
         """댓글을 삭제합니다."""
         if request.user.is_authenticated:
             comment = get_object_or_404(Comment, id=comment_id)
@@ -551,22 +485,22 @@ class StoryTranslation(APIView):
 
     def post(self, request):
         try:
-            # Deepl API 키 설정
-            deepl_auth_key = settings.DEEPL_AUTH_KEY
-            translator = deepl.Translator(deepl_auth_key)
-            deepl_target_lang = request.data["target_language"]
+            # deepl 모델 로드
+            deepl_translator = load_deepl_model()
+            deepl_target_lang = request.data.get("target_language", "")
 
             # 제목 번역
-            trans_title_result = translator.translate_text(
-                request.data["story_title"], target_lang=deepl_target_lang
+            trans_title_result = deepl_translator.translate_text(
+                request.data.get("story_title", ""), target_lang=deepl_target_lang
             )
+
             trans_title_str_result = str(trans_title_result)
 
             translated_scripts = []
 
             # 스크립트 번역
-            for script in request.data["story_script"]:
-                trans_script_result = translator.translate_text(
+            for script in request.data.get("story_script", ""):
+                trans_script_result = deepl_translator.translate_text(
                     script["paragraph"], target_lang=deepl_target_lang
                 )
 

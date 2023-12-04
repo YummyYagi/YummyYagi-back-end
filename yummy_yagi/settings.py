@@ -141,6 +141,7 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+BASE_URL = os.environ.get("BASE_URL", "")
 FE_URL = os.environ.get("FE_URL", "")
 BE_URL = os.environ.get("BE_URL", "")
 
@@ -215,4 +216,49 @@ SIMPLE_JWT = {
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+}
+
+ERROR_LOG_FILE = os.path.join(BASE_DIR, "logs", "error.log")
+INFO_LOG_FILE = os.path.join(BASE_DIR, "logs", "info.log")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "verbose",
+            "filename": ERROR_LOG_FILE,
+            "maxBytes": 1024 * 1024 * 5,
+            "backupCount": 5,
+        },
+        "info_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": INFO_LOG_FILE,
+            "formatter": "verbose",
+            "encoding": "utf-8",
+            "maxBytes": 1024 * 1024 * 5,
+            "backupCount": 5,
+        },
+    },
+    "loggers": {
+        "error_logger": {
+            "handlers": ["error_file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "info_logger": {
+            "handlers": ["info_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }

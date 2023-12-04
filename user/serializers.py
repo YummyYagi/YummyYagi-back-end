@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["email", "password", "country", "nickname", "profile_img"]
 
     def validate(self, data):
-        password = data.get("password")
+        password = data.get("password", "")
         pattern = r"^(?=.*?[0-9])(?=.*?[#?!@$~%^&*-]).{8,20}$"
         if not re.match(pattern, password):
             raise exceptions.ValidationError(
@@ -42,8 +42,8 @@ class LoginSerializer(TokenObtainPairSerializer):
     password = serializers.CharField(required=True, write_only=True)
 
     def validate(self, request_data):
-        request_email = request_data.get("email")
-        request_password = request_data.get("password")
+        request_email = request_data.get("email", "")
+        request_password = request_data.get("password", "")
 
         try:
             user = User.objects.get(email=request_email)
@@ -139,7 +139,7 @@ class PasswordSerializer(serializers.ModelSerializer):
         fields = ["current_password", "new_password", "new_password_check"]
 
     def validate(self, data):
-        password = data.get("new_password")
+        password = data.get("new_password", "")
         pattern = r"^(?=.*?[0-9])(?=.*?[#?!@$~%^&*-]).{8,20}$"
         if not re.match(pattern, password):
             raise exceptions.ValidationError(
