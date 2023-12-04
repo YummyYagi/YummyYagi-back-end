@@ -387,6 +387,7 @@ class GoogleLoginView(APIView):
 
 class MyPageView(APIView):
     """사용자의 마이페이지입니다."""
+    permission_classes = [IsOwner, IsAuthenticated]
 
     def get(self, request):
         user = request.user
