@@ -490,7 +490,7 @@ class UserInfoView(APIView):
             stories_to_update = Story.objects.filter(like=request.user)
             for story in stories_to_update:
                 story.like_count -= 1
-                story.hat_count -= 1
+                story.hate_count -= 1
                 story.save()
 
             auth_user.delete()
