@@ -243,10 +243,10 @@ LOGGING = {
     },
     "filters": {"testing": {"()": NotInTestingFilter}},
     "handlers": {
-        "filters": ["testing"],
         "error_file": {
             "level": "ERROR",
             "class": "logging.handlers.RotatingFileHandler",
+            "filters": ["testing"],
             "formatter": "verbose",
             "filename": ERROR_LOG_FILE,
             "maxBytes": 1024 * 1024 * 5,
@@ -255,6 +255,7 @@ LOGGING = {
         "info_file": {
             "level": "INFO",
             "class": "logging.handlers.RotatingFileHandler",
+            "filters": ["testing"],
             "filename": INFO_LOG_FILE,
             "formatter": "verbose",
             "encoding": "utf-8",
