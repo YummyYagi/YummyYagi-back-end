@@ -2,6 +2,8 @@ from datetime import timedelta
 import os
 from pathlib import Path
 import environ
+import sys
+import logging
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -9,7 +11,7 @@ env = environ.Env(DEBUG=(bool, True))
 
 environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
 DEBUG = os.environ.get("DEBUG", "")
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get("SECRET_KEY")
 ALLOWED_HOSTS = ["backend"]
 
 GPT_API_KEY = os.environ.get("GPT_DALLE_API_KEY", "")
@@ -220,7 +222,8 @@ SIMPLE_JWT = {
 
 ERROR_LOG_FILE = os.path.join(BASE_DIR, "logs", "error.log")
 INFO_LOG_FILE = os.path.join(BASE_DIR, "logs", "info.log")
-
+if len(sys.argv) > 1 and sys.argv[1] == "test":
+    logging.disable(logging.CRITICAL)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
