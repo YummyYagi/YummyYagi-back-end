@@ -268,7 +268,8 @@ LOGGING = {
         },
     },
 }
-
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
 if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
     "IS_GITHUB_ACTION"
 ) == "True":
