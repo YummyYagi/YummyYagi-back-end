@@ -4,6 +4,8 @@ jobs:
   execute_tests:
     name: Install requirements and execute tests
     runs-on: ubuntu-latest
+    env:
+      IS_GITHUB_ACTION: "True"
     steps:
       - name: Update
         run: sudo apt update
@@ -22,6 +24,5 @@ jobs:
       - name: Run Test 
         env: 
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          IS_GITHUB_ACTION: "True"
         run: |
             python manage.py test
