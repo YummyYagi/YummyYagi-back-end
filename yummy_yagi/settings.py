@@ -2,7 +2,7 @@ from datetime import timedelta
 import os
 from pathlib import Path
 import environ
-from logging import Filter
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -222,16 +222,6 @@ SIMPLE_JWT = {
 ERROR_LOG_FILE = os.path.join(BASE_DIR, "logs", "error.log")
 INFO_LOG_FILE = os.path.join(BASE_DIR, "logs", "info.log")
 
-
-class NotInTestingFilter(Filter):
-    def filter(self, record):
-        from django.conf import settings
-
-        return not settings.TESTING_MODE
-
-
-TESTING_MODE = True
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -241,12 +231,10 @@ LOGGING = {
             "datefmt": "%d/%b/%Y %H:%M:%S",
         },
     },
-    "filters": {"testing": {"()": NotInTestingFilter}},
     "handlers": {
         "error_file": {
             "level": "ERROR",
             "class": "logging.handlers.RotatingFileHandler",
-            "filters": ["testing"],
             "formatter": "verbose",
             "filename": ERROR_LOG_FILE,
             "maxBytes": 1024 * 1024 * 5,
@@ -255,7 +243,6 @@ LOGGING = {
         "info_file": {
             "level": "INFO",
             "class": "logging.handlers.RotatingFileHandler",
-            "filters": ["testing"],
             "filename": INFO_LOG_FILE,
             "formatter": "verbose",
             "encoding": "utf-8",
@@ -276,3 +263,6 @@ LOGGING = {
         },
     },
 }
+
+if len(sys.argv) > 1 and sys.argv[1] == "test":
+    LOGGING = {}
