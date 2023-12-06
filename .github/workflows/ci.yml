@@ -7,7 +7,7 @@ jobs:
     env:
       IS_GITHUB_ACTION: "True"
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      T_CELERY_BROKER_URL: "amqp://guest:guest@localhost:5672//"
+      T_CELERY_BROKER_URL: "amqp://guest:guest@fv-az1242-267:5672//"
     steps:
       - name: Update
         run: sudo apt update
