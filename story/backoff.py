@@ -2,6 +2,7 @@ import random
 import time
 import openai
 
+
 def retry_with_exponential_backoff(
     func,
     initial_delay: float = 1,
@@ -22,7 +23,7 @@ def retry_with_exponential_backoff(
                 return func(*args, **kwargs)
 
             # Retry on specified errors
-            
+
             except openai.RateLimitError as e:
                 print(e)
                 # Increment retries
@@ -39,5 +40,5 @@ def retry_with_exponential_backoff(
 
                 # Sleep for the delay
                 time.sleep(delay)
-    return wrapper
 
+    return wrapper

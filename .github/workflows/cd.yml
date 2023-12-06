@@ -1,0 +1,20 @@
+name: Django Deploy CD
+on:
+  push:
+    branches: [release]
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.LIVE_SERVER_IP }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.KEY }}
+          port : ${{secrets.PORT}}
+          script: |
+            cd ${{ secrets.PROJECT_PATH }}
+            git pull ${{secrets.REPO_URL}} release
+            sudo docker compose down 
+            sudo docker compose up -d
