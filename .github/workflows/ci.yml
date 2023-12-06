@@ -6,11 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update
-        run: sudo apt update && sudo apt upgrade
+        run: sudo apt update
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Install docker
-        run: sudo apt install docker.io -y
+        run: sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin
       - name: Install pip
         run: sudo apt install python3-pip
       - name: Install requirements
