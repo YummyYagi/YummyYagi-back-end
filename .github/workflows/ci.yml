@@ -10,7 +10,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Install docker
-        run: sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+        run: sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin
       - name: Install pip
         run: sudo apt install python3-pip
       - name: Install requirements
@@ -22,5 +22,6 @@ jobs:
       - name: Run Test 
         env: 
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          IS_GITHUB_ACTION: True
         run: |
             python manage.py test

@@ -268,7 +268,9 @@ LOGGING = {
     },
 }
 
-if len(sys.argv) > 1 and sys.argv[1] == "test":
+if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
+    "IS_GITHUB_ACTION"
+) == True:
     LOGGING["handlers"]["error_file"]["class"] = "logging.NullHandler"
     del LOGGING["handlers"]["error_file"]["filename"]
     del LOGGING["handlers"]["error_file"]["maxBytes"]
