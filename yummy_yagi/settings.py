@@ -266,4 +266,6 @@ LOGGING = {
 
 if len(sys.argv) > 1 and sys.argv[1] == "test":
     LOGGING["handlers"]["error_file"]["class"] = "logging.NullHandler"
+    del LOGGING["handlers"]["error_file"]["filename"]
     LOGGING["handlers"]["info_file"]["class"] = "logging.NullHandler"
+    del LOGGING["handlers"]["info_file"]["filename"]
