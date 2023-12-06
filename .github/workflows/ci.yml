@@ -18,7 +18,9 @@ jobs:
         run: sudo apt install python3-pip
       - name: Install requirements
         run: pip install -r requirements.txt
-      - name: run rabbitmq
+      - name: |
+            run rabbitmq
+            rabbitmqctl list_vhosts
         run: sudo docker run -d -p 5672:5672 rabbitmq
       - name: run celery
         run: celery -A yummy_yagi worker
