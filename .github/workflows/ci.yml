@@ -13,3 +13,5 @@ jobs:
         run: sudo apt install python3-pip
       - name: Install requirements
         run: pip install -r requirements.txt
+      - name: Run Test 
+        run: python manage.py test
