@@ -265,4 +265,5 @@ LOGGING = {
 }
 
 if len(sys.argv) > 1 and sys.argv[1] == "test":
-    LOGGING = {}
+    LOGGING["handlers"]["error_file"]["class"] = "logging.NullHandler"
+    LOGGING["handlers"]["info_file"]["class"] = "logging.NullHandler"
