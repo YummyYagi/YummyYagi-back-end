@@ -267,7 +267,7 @@ LOGGING = {
         },
     },
 }
-
+print(os.environ.get("IS_GITHUB_ACTION"))
 if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
     "IS_GITHUB_ACTION"
 ) == True:
