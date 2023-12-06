@@ -157,7 +157,10 @@ BE_URL = os.environ.get("BE_URL", "")
 
 # 로컬에서 여기 주석 풀기
 CORS_ALLOW_ALL_ORIGINS = True
-CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
+# # 도커 없이 로컬에서 사용
+# CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
+# CI 전용 CELERY_BROKER_URL
+CELERY_BROKER_URL = os.environ.get("CI_CELERY_BROKER_URL", "")
 
 
 CELERY_TIMEZONE = "Asia/Seoul"
@@ -267,7 +270,7 @@ LOGGING = {
         },
     },
 }
-print(os.environ)
+
 if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
     "IS_GITHUB_ACTION"
 ) == "True":
