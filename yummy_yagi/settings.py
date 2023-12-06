@@ -268,8 +268,7 @@ LOGGING = {
         },
     },
 }
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES = True
+
 if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
     "IS_GITHUB_ACTION"
 ) == "True":
@@ -282,3 +281,5 @@ if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
     del LOGGING["handlers"]["info_file"]["encoding"]
     del LOGGING["handlers"]["info_file"]["maxBytes"]
     del LOGGING["handlers"]["info_file"]["backupCount"]
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
