@@ -21,9 +21,9 @@ jobs:
       - name: run rabbitmq
         run: |
             sudo docker run -d -p 5672:5672 rabbitmq
-            sudo rabbitmqctl list_vhosts
       - name: run celery
-        run: celery -A yummy_yagi worker
+        run: |
+            celery -A yummy_yagi worker -P eventlet
       - name: Run Test 
         run: |
             python manage.py test
