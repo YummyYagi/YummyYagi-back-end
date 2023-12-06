@@ -6,6 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IS_GITHUB_ACTION: "True"
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
     steps:
       - name: Update
         run: sudo apt update
@@ -22,7 +23,5 @@ jobs:
       - name: run celery
         run: celery -A yummy_yagi worker
       - name: Run Test 
-        env: 
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
             python manage.py test
