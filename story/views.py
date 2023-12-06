@@ -252,18 +252,14 @@ class StoryView(APIView):
         image_file_list = []
 
         for image_url in image_url_list:
-            if image_url == "None":
-                image_file_list.append(None)
-            else:
+            try:
                 response = requests.get(image_url)
-                if response.status_code == 200:
+                if response.status_code == 200 and response.content:
                     image_content = ContentFile(response.content)
                     image_content.name = "story_image.jpg"
                     image_file_list.append(image_content)
-                else:
-                    image_file_list.append(
-                        f"{settings.BE_URL}/media/story/404_not_found.png"
-                    )
+            except:
+                image_file_list.append(None)
 
         content_data = []
 
@@ -292,7 +288,7 @@ class StoryView(APIView):
                 info_logger.info(f"{end_time - start_time:.2f} seconds, 동화책 출판 성공")
             else:
                 end_time = time.time()
-                error_logger.error(f"story_serializer : {story_serializer.error}")
+                error_logger.error(f"story_serializer : {story_serializer.errors}")
                 return Response(
                     {"status": "400", "error": "동화책 작성에 실패했습니다."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -303,7 +299,7 @@ class StoryView(APIView):
             )
         else:
             end_time = time.time()
-            error_logger.error(f"content_serializer : {content_serializer.error}")
+            error_logger.error(f"content_serializer : {content_serializer.errors}")
             return Response(
                 {"status": "400", "error": "동화 페이지 작성에 실패했습니다."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -319,7 +315,10 @@ class StoryView(APIView):
         if request.user.is_authenticated:
             if request.user == story.author:
                 story.delete()
-                return Response({"status": "204", "success": "동화가 삭제되었습니다."})
+                return Response(
+                    {"status": "204", "success": "동화가 삭제되었습니다."},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
             else:
                 return Response(
                     {"status": "403", "error": "삭제 권한이 없습니다."},
@@ -459,7 +458,10 @@ class CommentView(APIView):
             comment = get_object_or_404(Comment, id=comment_id)
             if request.user == comment.author:
                 comment.delete()
-                return Response({"status": "204", "success": "댓글 삭제 완료"})
+                return Response(
+                    {"status": "204", "success": "댓글 삭제 완료"},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
             else:
                 return Response(
                     {"status": "403", "error": "권한이 없습니다"},

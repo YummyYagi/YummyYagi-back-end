@@ -389,6 +389,8 @@ class MyPageView(APIView):
     """사용자의 마이페이지입니다."""
     permission_classes = [IsOwner, IsAuthenticated]
 
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user = request.user
         serializer = MypageSerializer(user)
@@ -398,7 +400,7 @@ class MyPageView(APIView):
 
 
 class UserInfoView(APIView):
-    permission_classes = [IsOwner, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         """사용자의 회원 정보 수정 페이지입니다."""
@@ -489,10 +491,14 @@ class UserInfoView(APIView):
             stories_to_update = Story.objects.filter(like=request.user)
             for story in stories_to_update:
                 story.like_count -= 1
+                story.hate_count -= 1
                 story.save()
 
             auth_user.delete()
-            return Response({"status": "204", "success": "회원 탈퇴가 완료되었습니다."})
+            return Response(
+                {"status": "204", "success": "회원 탈퇴가 완료되었습니다."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
         else:
             return Response(
                 {"status": "401", "error": "비밀번호가 불일치합니다."},

@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 from pathlib import Path
 import environ
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -9,8 +10,8 @@ env = environ.Env(DEBUG=(bool, True))
 
 environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
 DEBUG = os.environ.get("DEBUG", "")
-SECRET_KEY = env("SECRET_KEY")
-ALLOWED_HOSTS = []
+SECRET_KEY = os.environ.get("SECRET_KEY")
+ALLOWED_HOSTS = ["backend"]
 
 GPT_API_KEY = os.environ.get("GPT_DALLE_API_KEY", "")
 DEEPL_AUTH_KEY = os.environ.get("DEEPL_AUTH_KEY", "")
@@ -145,17 +146,20 @@ BASE_URL = os.environ.get("BASE_URL", "")
 FE_URL = os.environ.get("FE_URL", "")
 BE_URL = os.environ.get("BE_URL", "")
 
-if DEBUG == False:
-    CORS_ORIGIN_WHITELIST = [
-        FE_URL,
-        BE_URL,
-    ]
+# # 배포 할때 여기 주석 풀기
+# CORS_ORIGIN_WHITELIST = [
+#     FE_URL,
+#     BE_URL,
+# ]
 
-    CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
-    CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
-else:
-    CORS_ALLOW_ALL_ORIGINS = True
-    CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
+# CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
+# CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
+
+# 로컬에서 여기 주석 풀기
+CORS_ALLOW_ALL_ORIGINS = True
+# 도커 없이 로컬에서 사용
+CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
+
 
 CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_RESULT_BACKEND = "django-db"
@@ -264,3 +268,18 @@ LOGGING = {
         },
     },
 }
+
+if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
+    "IS_GITHUB_ACTION"
+) == "True":
+    LOGGING["handlers"]["error_file"]["class"] = "logging.NullHandler"
+    del LOGGING["handlers"]["error_file"]["filename"]
+    del LOGGING["handlers"]["error_file"]["maxBytes"]
+    del LOGGING["handlers"]["error_file"]["backupCount"]
+    LOGGING["handlers"]["info_file"]["class"] = "logging.NullHandler"
+    del LOGGING["handlers"]["info_file"]["filename"]
+    del LOGGING["handlers"]["info_file"]["encoding"]
+    del LOGGING["handlers"]["info_file"]["maxBytes"]
+    del LOGGING["handlers"]["info_file"]["backupCount"]
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
