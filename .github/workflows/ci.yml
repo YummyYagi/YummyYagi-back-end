@@ -22,6 +22,6 @@ jobs:
       - name: Run Test 
         env: 
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          IS_GITHUB_ACTION: True
+          IS_GITHUB_ACTION: "True"
         run: |
             python manage.py test

@@ -270,7 +270,7 @@ LOGGING = {
 print(os.environ.get("IS_GITHUB_ACTION"))
 if (len(sys.argv) > 1 and sys.argv[1] == "test") or os.environ.get(
     "IS_GITHUB_ACTION"
-) == True:
+) == "True":
     LOGGING["handlers"]["error_file"]["class"] = "logging.NullHandler"
     del LOGGING["handlers"]["error_file"]["filename"]
     del LOGGING["handlers"]["error_file"]["maxBytes"]
