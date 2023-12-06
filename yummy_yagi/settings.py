@@ -267,5 +267,11 @@ LOGGING = {
 if len(sys.argv) > 1 and sys.argv[1] == "test":
     LOGGING["handlers"]["error_file"]["class"] = "logging.NullHandler"
     del LOGGING["handlers"]["error_file"]["filename"]
+    del LOGGING["handlers"]["error_file"]["encoding"]
+    del LOGGING["handlers"]["error_file"]["maxBytes"]
+    del LOGGING["handlers"]["error_file"]["backupCount"]
     LOGGING["handlers"]["info_file"]["class"] = "logging.NullHandler"
     del LOGGING["handlers"]["info_file"]["filename"]
+    del LOGGING["handlers"]["info_file"]["encoding"]
+    del LOGGING["handlers"]["info_file"]["maxBytes"]
+    del LOGGING["handlers"]["info_file"]["backupCount"]
