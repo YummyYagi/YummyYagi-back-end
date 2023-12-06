@@ -6,6 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IS_GITHUB_ACTION: "True"
+      FE_URL: ${{ secrets.FE_URL }}
+      BE_URL: ${{ secrets.BE_URL }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
     steps:
       - name: Check out repository code
