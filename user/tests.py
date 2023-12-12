@@ -1,12 +1,14 @@
 from django.test import TestCase
-from user.models import User, UserManager, Ticket, PaymentResult
+from user.models import User, Ticket
 from unittest.mock import patch
 from django.urls import reverse
+from django.core import mail
 from .serializers import LoginSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 
 class SignUpPageTests(TestCase):
+    
     # 셋업
     def setUp(self) -> None:
         self.nickname = "testuser"
@@ -30,6 +32,29 @@ class SignUpPageTests(TestCase):
         users = User.objects.all()
         self.assertEqual(users.count(), 1)
         self.assertEqual(response.status_code, 201)
+
+        # Celery 작업이 예상대로 호출되었는지 확인
+        with self.settings(CELERY_ALWAYS_EAGER=True):
+            # 작업 실행 확인
+            with patch('user.tasks.send_verification_email.delay') as mock_celery_task:
+
+                user = User.objects.get(email=self.email)
+
+                # 회원가입 이메일 확인 작업 호출
+                mock_celery_task(user.id, 'verification_url', user.email)
+
+                # 호출 확인
+                mock_celery_task.assert_called_with(user.id, 'verification_url', user.email)
+
+                # 이메일 정보 확인
+                self.assertEqual(len(mail.outbox), 1)  # 이메일 보내졌는지 확인
+
+                email = mail.outbox[0]
+                print(email)
+                print(email.to)
+                print(email.subject)
+                print(email.body)
+
 
     # 틀린 회원가입
     def test_wrong_signup_form(self):
