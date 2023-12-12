@@ -146,19 +146,19 @@ BASE_URL = os.environ.get("BASE_URL", "")
 FE_URL = os.environ.get("FE_URL", "")
 BE_URL = os.environ.get("BE_URL", "")
 
-# 배포 할때 여기 주석 풀기
-CORS_ORIGIN_WHITELIST = [
-    FE_URL,
-    BE_URL,
-]
+# # 배포 할때 여기 주석 풀기
+# CORS_ORIGIN_WHITELIST = [
+#     FE_URL,
+#     BE_URL,
+# ]
 
-CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
-CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
+# CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
+# CELERY_BROKER_URL = os.environ.get("F_CELERY_BROKER_URL", "")
 
-# # 로컬에서 여기 주석 풀기
-# CORS_ALLOW_ALL_ORIGINS = True
-# # 도커 없이 로컬에서 사용
-# CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
+# 로컬에서 여기 주석 풀기
+CORS_ALLOW_ALL_ORIGINS = True
+# 도커 없이 로컬에서 사용
+CELERY_BROKER_URL = os.environ.get("T_CELERY_BROKER_URL", "")
 
 
 CELERY_TIMEZONE = "Asia/Seoul"
@@ -169,14 +169,6 @@ CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_RESULT_EXPIRES = 30
 CELERY_RESULT_EXTENDED = True
-CELERY_CACHE_BACKEND = "default"
-
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-        "LOCATION": "my_cache_table",
-    }
-}
 
 KAKAO_REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY", "")
 KAKAO_SECRET_KEY = os.environ.get("KAKAO_SECRET_KEY", "")
