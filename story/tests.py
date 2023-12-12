@@ -140,10 +140,10 @@ class CommentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["comments"][0]["story_id"], self.story.id)
         self.assertEqual(
-            response.data["comments"][0]["comment_id"], str(self.comment.id)
+            response.data["comments"][0]["comment_id"], self.comment.id
         )
         self.assertEqual(
-            response.data["comments"][0]["author_id"], str(self.comment.author.id)
+            response.data["comments"][0]["author_id"], self.comment.author.id
         )
         self.assertEqual(
             response.data["comments"][0]["author_nickname"],
