@@ -336,8 +336,6 @@ class StoryView(APIView):
             return
         ust, _ = UserStoryTimeStamp.objects.get_or_create(user=user, story=story)
         ust.save()
-        return ust.timestamp
-
 
 class LikeView(APIView):
     permission_classes = [IsAuthenticated]
