@@ -17,7 +17,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import get_object_or_404
 from user.models import User, Ticket, PaymentResult as PaymentResultModel
-from user.permissions import IsOwner, IsAuthenticated
+from user.permissions import IsAuthenticated
 from user.serializers import (
     UserSerializer,
     LoginSerializer,
@@ -629,39 +629,43 @@ class PaymentResult(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        print(request.data.get("rsp", {}))
         # 구매자 이메일과 현재 로그인한 사용자 이메일 비교
         if request.user.email == request.data.get("rsp", {}).get("buyer_email", ""):
             serializer = PaymentResultSerializer(data=request.data.get("rsp", ""))
-            print(serializer)
             if serializer.is_valid():
                 result = serializer.save()
+                if request.data.get("rsp", {})['success'] == True:
+                    # 상품명에 'G'가 포함된 경우 (티켓 구매 / 상품명 : G0S0P0)
+                    if "G" in result.name:
+                        # 티켓 개수 추출
+                        tickets = result.name.split("_")
+                        golden_ticket_cnt = int(tickets[0].split("G")[1])
+                        silver_ticket_cnt = int(tickets[1].split("S")[1])
+                        pink_ticket_cnt = int(tickets[2].split("P")[1])
 
-                # 상품명에 'G'가 포함된 경우 (티켓 구매 / 상품명 : G0S0P0)
-                if "G" in result.name:
-                    # 티켓 개수 추출
-                    tickets = result.name.split("_")
-                    golden_ticket_cnt = int(tickets[0].split("G")[1])
-                    silver_ticket_cnt = int(tickets[1].split("S")[1])
-                    pink_ticket_cnt = int(tickets[2].split("P")[1])
+                        # 사용자의 티켓 정보 업데이트
+                        user_tickets = Ticket.objects.get(ticket_owner=request.user)
 
-                    # 사용자의 티켓 정보 업데이트
-                    user_tickets = Ticket.objects.get(ticket_owner=request.user)
+                        if golden_ticket_cnt > 0:
+                            user_tickets.golden_ticket += golden_ticket_cnt
 
-                    if golden_ticket_cnt > 0:
-                        user_tickets.golden_ticket += golden_ticket_cnt
+                        if silver_ticket_cnt > 0:
+                            user_tickets.silver_ticket += silver_ticket_cnt
 
-                    if silver_ticket_cnt > 0:
-                        user_tickets.silver_ticket += silver_ticket_cnt
+                        if pink_ticket_cnt > 0:
+                            user_tickets.pink_ticket += pink_ticket_cnt
 
-                    if pink_ticket_cnt > 0:
-                        user_tickets.pink_ticket += pink_ticket_cnt
-
-                    user_tickets.save()
-
-                return Response(
-                    {"status": "201", "success": "결제 완료"},
-                    status=status.HTTP_201_CREATED,
-                )
+                        user_tickets.save()
+                    return Response(
+                        {"status": "201", "success": "결제 완료"},
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    return Response(
+                            {"status": "204", "error": request.data.get("rsp", {})['error_msg']},
+                            status=status.HTTP_204_NO_CONTENT,
+                    )
             else:
                 return Response(
                     {"status": "400", "error": "유효하지 않은 데이터입니다."},
