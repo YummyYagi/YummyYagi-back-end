@@ -18,9 +18,9 @@ class ContentCreateSerializer(serializers.ModelSerializer):
 
 
 class ContentSerializer(serializers.ModelSerializer):
-    content_id = serializers.CharField(source="id")
+    content_id = serializers.IntegerField(source="id")
     story_image = serializers.ImageField(source="image")
-    story_id = serializers.CharField(source="story.id")
+    story_id = serializers.IntegerField(source="story.id")
 
     class Meta:
         model = Content
@@ -36,8 +36,8 @@ class UserIdSerializer(serializers.ModelSerializer):
 
 
 class StorySerializer(serializers.ModelSerializer):
-    story_id = serializers.CharField(source="id")
-    author_id = serializers.CharField(source="author.id")
+    story_id = serializers.IntegerField(source="id")
+    author_id = serializers.IntegerField(source="author.id")
     author_nickname = serializers.CharField(source="author.nickname")
     story_title = serializers.CharField(source="title")
     story_paragraph_list = ContentSerializer(source="contents", many=True)
@@ -63,8 +63,8 @@ class StorySerializer(serializers.ModelSerializer):
 
 
 class StoryListSerializer(serializers.ModelSerializer):
-    story_id = serializers.CharField(source="id")
-    author_id = serializers.CharField(source="author")
+    story_id = serializers.IntegerField(source="id")
+    author_id = serializers.IntegerField(source="author")
     author_nickname = serializers.CharField(source="author.nickname")
     author_country = serializers.CharField(source="author.country")
     story_title = serializers.CharField(source="title")
@@ -100,8 +100,8 @@ class StoryListSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    comment_id = serializers.CharField(source="id")
-    author_id = serializers.CharField(source="author.id")
+    comment_id = serializers.IntegerField(source="id")
+    author_id = serializers.IntegerField(source="author.id")
     author_nickname = serializers.CharField(source="author.nickname")
     author_image = serializers.ImageField(source="author.profile_img")
 
